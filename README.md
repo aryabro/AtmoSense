@@ -47,21 +47,17 @@ Meeting notes: Finished Iteration 1- Part2. Set up environments locally. We assi
 
 <b>Project Week 2</b>
 </br>
-Members present: List the NetID of the people who attended the meeting
+Members present: zhenbi2, aaroncl2, nk46, sabelle2, diveya2, nasare2, satejrs2, yuangc3
 </br>
-Meeting notes: Explain the overall team progress and a summary of discussion
-</br>
-| NetID          | Progress from last week         | Tasks for next week   |
-| ---------------| --------------------------------| ----------------------|
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-</br>
+Meeting notes:
+- combined everyone's individual UML class diagrams
+- everyone finished parts 1 & 2 of this iteration
+To Do:
+- Add necessary Android Components for each class (UML Digram, part 3)
+- Complete Component Transition graph (part 4)
+- Each person/group will finish their class/component definitions for parts 3 & 4 by 10/10
+- We will use 10/11 to review/ make last minute changes
+- Zhen Bi will submit doc 10/12
 
 
 <b>Project Week 3</b>
