@@ -52,6 +52,7 @@ Members present: zhenbi2, aaroncl2, nk46, sabelle2, diveya2, nasare2, satejrs2, 
 Meeting notes:
 - combined everyone's individual UML class diagrams
 - everyone finished parts 1 & 2 of this iteration
+- [Iteration 2 Notes](https://docs.google.com/document/d/1aaSWwZ0o5rpfSfGO8OCLgbrnJQ1jPRx3rJRlzlYfB0Y/edit?usp=sharing)
 To Do:
 - Add necessary Android Components for each class (UML Digram, part 3)
 - Complete Component Transition graph (part 4)
@@ -62,21 +63,27 @@ To Do:
 
 <b>Project Week 3</b>
 </br>
-Members present: List the NetID of the people who attended the meeting
+Members present: zhenbi2, aaroncl2, nk46, sabelle2, diveya2, nasare2, satejrs2, yuangc3
 </br>
-Meeting notes: Explain the overall team progress and a summary of discussion
+Meeting Notes:
+- Distributed tasks for Iteration 3 of project 
+- Everyone finished parts 1 & 2 of this iteration
+- [Iteration 3 Notes Document](https://docs.google.com/document/d/1BxIeHIgbxuBp_N-n1q6EKJgVvrJgsSwxF4kwfXDPQBg/edit?usp=sharing)
+  To Do:
+- Add necessary Android Components for each class for user login, auth, LLM UI
+- Each person/group will finish their class/component definitions by 10/28
 </br>
-| NetID          | Progress from last week         | Tasks for next week   |
-| ---------------| --------------------------------| ----------------------|
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-</br>
+  | NetID          | Progress from last week         |                   Tasks for next week                     |
+  | ---------------| --------------------------------| ----------------------------------------------------------|
+  |   zhenbi2      |       see Iteration 2           | Implementation progress for add new city to location list |
+  |   aaroncl2     |       see Iteration 2           | Implementation progress LLM UI Customization              |                     
+  |   sabelle2     |       see Iteration 2           | Implementation progress for add new city to location list |                   
+  |   diveya2      |       see Iteration 2           | Implementation progress user auth and login               |                     
+  |   nasare2      |       see Iteration 2           | Implementation progress LLM UI Customization              |                    
+  |   satejrs2     |       see Iteration 2           | Implementation progress user auth and login               |                     
+  |   yuangc3      |       see Iteration 2           | Implementation progress for add new city to location list |                     
+  |   nk46         |       see Iteration 2           | Implementation progress LLM UI Customization              |
+  </br>
 
 
 <b>Project Week 4</b>
