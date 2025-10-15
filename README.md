@@ -70,7 +70,7 @@ Meeting Notes:
 - Everyone finished parts 1 & 2 of this iteration
 - [Iteration 3 Notes Document](https://docs.google.com/document/d/1BxIeHIgbxuBp_N-n1q6EKJgVvrJgsSwxF4kwfXDPQBg/edit?usp=sharing)
   To Do:
-- Add necessary Android Components for each class for user login, auth, LLM UI
+- Add necessary  Android Components for each class for user login, auth, LLM UI
 - Each person/group will finish their class/component definitions by 10/28
 </br>
   | NetID          | Progress from last week         |                   Tasks for next week                     |
