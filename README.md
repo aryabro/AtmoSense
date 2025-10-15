@@ -73,17 +73,17 @@ Meeting Notes:
 - Add necessary  Android Components for each class for user login, auth, LLM UI
 - Each person/group will finish their class/component definitions by 10/28
 </br>
-  | NetID          | Progress from last week         |                   Tasks for next week                     |
-  | ---------------| --------------------------------| ----------------------------------------------------------|
-  |   zhenbi2      |       see Iteration 2           | Implementation progress for add new city to location list |
-  |   aaroncl2     |       see Iteration 2           | Implementation progress LLM UI Customization              |                     
-  |   sabelle2     |       see Iteration 2           | Implementation progress for add new city to location list |                   
-  |   diveya2      |       see Iteration 2           | Implementation progress user auth and login               |                     
-  |   nasare2      |       see Iteration 2           | Implementation progress LLM UI Customization              |                    
-  |   satejrs2     |       see Iteration 2           | Implementation progress user auth and login               |                     
-  |   yuangc3      |       see Iteration 2           | Implementation progress for add new city to location list |                     
-  |   nk46         |       see Iteration 2           | Implementation progress LLM UI Customization              |
-  </br>
+| NetID          | Progress from last week         |                   Tasks for next week                     |
+| ---------------| --------------------------------| ----------------------------------------------------------|
+| zhenbi2        | see Iteration 2                 | Implementation progress for add new city to location list |
+| aaroncl2       | see Iteration 2                 | Implementation progress LLM UI Customization              |                     
+| sabelle2       | see Iteration 2                 | Implementation progress for add new city to location list |                   
+| diveya2        | see Iteration 2                 | Implementation progress user auth and login               |                     
+| nasare2        | see Iteration 2                 | Implementation progress LLM UI Customization              |                    
+| satejrs2       | see Iteration 2                 | Implementation progress user auth and login               |                     
+| yuangc3        | see Iteration 2                 | Implementation progress for add new city to location list |                     
+| nk46           | see Iteration 2                 | Implementation progress LLM UI Customization              |
+</br>
 
 
 <b>Project Week 4</b>
