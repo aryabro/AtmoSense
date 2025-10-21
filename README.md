@@ -84,22 +84,31 @@ To Do: Add necessary  Android Components for each class for user login, auth, LL
 
 
 <b>Project Week 4</b>
-</br>
-Members present: List the NetID of the people who attended the meeting
-</br>
-Meeting notes: Explain the overall team progress and a summary of discussion
-</br>
-| NetID          | Progress from last week         | Tasks for next week   |
-| ---------------| --------------------------------| ----------------------|
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-</br>
+<br>
+Members present: zhenbi2, aaroncl2, nk46, sabelle2, diveya2, nasare2, satejrs2, yuangc3
+<br>
+Meeting Summary: 
+Everyone made progress on either the Android app features assigned to them or their LLM feature (4th credit hour project). We have some merge conflicts that people will privately resolve with each branch/feature owner. For LLM project, we discussed slicing the test bench to test our code.
+
+Tasks for next week:
+- Work on LLM report for those who have complete their features (june, sabelle/satej, Niranjan, aaron)
+- Work on LLM features (Aryaman/Colin, Divey)
+- Work on android features
+
+Meeting Notes:
+Android app
+- june is implementing a city verification feature (valid city). Currently hardcoded, it is an extension of colin’s add city list
+- Sabelle will do UI updates
+- Divey - login screen, but there are merge conflicts to resolve with main branch. Discussed using Android Account Manager to store user accounts for app
+- Aryaman / Aaron / Niranjan - llm feature current status. Can type in natural language description and UI changes are applied. Will work with divey to resolve merge conflict
+- Satej will handle sql database setup for user accounts
+
+
+Llm project
+- Sabelle wrote autocomplete feature. Satej & Sabelle are figuring out testing.
+- June has written search but also not tested
+- Everyone is working through set up
+- June & sabelle will go to office hours to figure out how to evaluate the results.
 
 
 <b>Project Week 5</b>
