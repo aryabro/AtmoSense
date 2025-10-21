@@ -9,25 +9,26 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final String TAG = "GeminiAPI";
     private EditText usernameEditText, passwordEditText, themeDescriptionEditText;
     private Button loginButton;
     private ConstraintLayout loginLayout;
@@ -43,15 +44,12 @@ public class LoginActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.login);
         loginLayout = findViewById(R.id.login_layout);
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String themeDescription = themeDescriptionEditText.getText().toString();
-                if (!themeDescription.isEmpty()) {
-                    generateTheme(themeDescription);
-                } else {
-                    applyDefaultTheme();
-                }
+        loginButton.setOnClickListener(v -> {
+            String themeDescription = themeDescriptionEditText.getText().toString();
+            if (!themeDescription.isEmpty()) {
+                generateTheme(themeDescription);
+            } else {
+                applyDefaultTheme();
             }
         });
     }
@@ -68,9 +66,10 @@ public class LoginActivity extends AppCompatActivity {
         Handler handler = new Handler(Looper.getMainLooper());
 
         executor.execute(() -> {
+            HttpURLConnection conn = null;
             try {
                 URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
 
@@ -83,43 +82,79 @@ public class LoginActivity extends AppCompatActivity {
                         "}]" +
                         "}]" +
                         "}";
+                Log.d(TAG, "Request Body: " + jsonBody);
 
                 conn.setDoOutput(true);
                 try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonBody.getBytes("utf-8");
+                    byte[] input = jsonBody.getBytes(StandardCharsets.UTF_8);
                     os.write(input, 0, input.length);
                 }
 
-                // Read the response
-                StringBuilder response = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-                    String responseLine;
-                    while ((responseLine = br.readLine()) != null) {
-                        response.append(responseLine.trim());
+                // Check response code and read response
+                int responseCode = conn.getResponseCode();
+                Log.d(TAG, "Response Code: " + responseCode);
+
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // Handle success
+                    StringBuilder response = new StringBuilder();
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                        String responseLine;
+                        while ((responseLine = br.readLine()) != null) {
+                            response.append(responseLine.trim());
+                        }
                     }
+                    Log.d(TAG, "Raw Success Response: " + response.toString());
+
+                    JSONObject jsonResponse = new JSONObject(response.toString());
+                    String resultText = jsonResponse.getJSONArray("candidates")
+                            .getJSONObject(0)
+                            .getJSONObject("content")
+                            .getJSONArray("parts")
+                            .getJSONObject(0)
+                            .getString("text");
+                    Log.d(TAG, "Extracted Text from API: " + resultText);
+
+                    String jsonString = resultText.replace("```json", "").replace("```", "").trim();
+                    JSONObject theme = new JSONObject(jsonString);
+                    String backgroundColor = theme.getString("backgroundColor");
+                    String textColor = theme.getString("textColor");
+                    Log.d(TAG, "Parsed Colors - BG: " + backgroundColor + ", Text: " + textColor);
+
+                    handler.post(() -> applyTheme(backgroundColor, textColor));
+
+                } else {
+                    // Handle error
+                    Log.e(TAG, "API call failed with response code: " + responseCode);
+                    StringBuilder errorResponse = new StringBuilder();
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8))) {
+                        String responseLine;
+                        while ((responseLine = br.readLine()) != null) {
+                            errorResponse.append(responseLine.trim());
+                        }
+                    }
+
+                    if (errorResponse.length() == 0) {
+                        Log.e(TAG, "Error stream was empty.");
+                    } else {
+                        Log.e(TAG, "Error Response: " + errorResponse.toString());
+                    }
+
+                    handler.post(() -> {
+                        Toast.makeText(LoginActivity.this, "Failed to generate theme. Applying default.", Toast.LENGTH_LONG).show();
+                        applyDefaultTheme();
+                    });
                 }
 
-                // Parse the JSON response
-                JSONObject jsonResponse = new JSONObject(response.toString());
-                JSONArray candidates = jsonResponse.getJSONArray("candidates");
-                JSONObject content = candidates.getJSONObject(0).getJSONObject("content");
-                JSONArray parts = content.getJSONArray("parts");
-                String resultText = parts.getJSONObject(0).getString("text");
-
-                // Clean and parse the theme from the result
-                String jsonString = resultText.replace("```json", "").replace("```", "").trim();
-                JSONObject theme = new JSONObject(jsonString);
-                String backgroundColor = theme.getString("backgroundColor");
-                String textColor = theme.getString("textColor");
-
-                handler.post(() -> applyTheme(backgroundColor, textColor));
-
             } catch (Exception e) {
-                Log.e("GeminiAPI", "API call failed", e);
+                Log.e(TAG, "API call failed with exception", e);
                 handler.post(() -> {
                     Toast.makeText(LoginActivity.this, "Failed to generate theme. Applying default.", Toast.LENGTH_LONG).show();
                     applyDefaultTheme();
                 });
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
             }
         });
     }
