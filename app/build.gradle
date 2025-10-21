@@ -2,6 +2,11 @@ plugins {
     id 'com.android.application'
 }
 
+def properties = new Properties()
+if (rootProject.file('local.properties').exists()) {
+    properties.load(rootProject.file('local.properties').newDataInputStream())
+}
+
 android {
     compileSdk 32
 
@@ -13,6 +18,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "GEMINI_API_KEY", properties.getProperty('GEMINI_API_KEY', '""')
     }
 
     buildTypes {
