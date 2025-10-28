@@ -113,22 +113,26 @@ Llm project
 
 <b>Project Week 5</b>
 </br>
-Members present: List the NetID of the people who attended the meeting
+Members present: zhenbi2, aaroncl2, nk46, sabelle2, diveya2, nasare2, satejrs2, yuangc3
 </br>
-Meeting notes: Explain the overall team progress and a summary of discussion
-</br>
-| NetID          | Progress from last week         | Tasks for next week   |
-| ---------------| --------------------------------| ----------------------|
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-</br>
+Meeting notes: We discussed progress on both projects and scheduled the next meeting.
 
+**> Android Project:**
+
+Satej merged a PR to enable user accounts for the app. After the latest merge, there are still some open issues: 1. Error during the LLM call for theme generation, 2. General UI/UX Issues in the app. We're aiming to fix the issues this week and we'll meet again on Friday (10/31) to record the demo. 
+
+*Tasks for next week*:
+- Team members will add comments to document their code as per the project specifications
+- Niranjan and Aryaman will merge their fixes for the LLM theme customization feature
+- Divey will work on UI issues and consistency across the app
+- Team members will meet on 10/31 to record the demo
+
+**> 4-credit hour project**
+
+We're currently passing 18 tests from the verified-40 set. Sabelle pushed a fix for docker configuration files.
+
+*Tasks for next week*:
+- The team will continue to work on their tools this week.
 
 <b>Project Week 6</b>
 </br>
