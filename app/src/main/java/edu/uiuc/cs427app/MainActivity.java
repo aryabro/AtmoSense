@@ -1,25 +1,26 @@
 package edu.uiuc.cs427app;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.view.View;
-
-import androidx.navigation.ui.AppBarConfiguration;
-
-import edu.uiuc.cs427app.databinding.ActivityMainBinding;
-
-import android.widget.Button;
-
-import android.widget.LinearLayout;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private AppBarConfiguration appBarConfiguration;
-    private ActivityMainBinding binding;
     private LinearLayout locationContainer;
+    private AccountManager accountManager;
+    private Account account;
 
     private void showAddLocationDialog() {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
@@ -30,30 +31,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setPositiveButton("Add", (dialog, which) -> {
             String cityName = input.getText().toString().trim();
             if (!cityName.isEmpty()) {
-                addCityToList(cityName);
+                addCityToList(cityName, true);
             }
         });
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
         builder.show();
-    }
-    private void addCityToList(String cityName){
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        android.widget.TextView cityText = new android.widget.TextView(this);
-        cityText.setText(cityName);
-        cityText.setTextSize(18);
-        cityText.setLayoutParams(new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        android.widget.Button detailsButton = new android.widget.Button(this);
-        detailsButton.setText("Show Details");
-        detailsButton.setOnClickListener(v -> {
-            Intent intent = new Intent(this, DetailsActivity.class);
-            intent.putExtra("city", cityName);
-            startActivity(intent);
-        });
-        row.addView(cityText);
-        row.addView(detailsButton);
-        locationContainer.addView(row);
     }
 
     @Override
@@ -61,27 +43,96 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initializing the UI components
-        // The list of locations should be customized per user (change the implementation so that
-        // buttons are added to layout programmatically
-        //Button buttonChampaign = findViewById(R.id.buttonChampaign);
-        //Button buttonChicago = findViewById(R.id.buttonChicago);
-        //Button buttonLA = findViewById(R.id.buttonLA);
+        accountManager = AccountManager.get(this);
+
+        String username = getIntent().getStringExtra("username");
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("Team #417 - " + username);
+        }
+
+        Account[] accounts = accountManager.getAccountsByType(LoginActivity.ACCOUNT_TYPE);
+        for (Account acc : accounts) {
+            if (acc.name.equals(username)) {
+                account = acc;
+                break;
+            }
+        }
+
         locationContainer = findViewById(R.id.locationContainer);
         Button buttonNew = findViewById(R.id.buttonAddLocation);
+        Button buttonLogout = findViewById(R.id.buttonLogout);
 
-        //buttonChampaign.setOnClickListener(this);
-        //buttonChicago.setOnClickListener(this);
-        //buttonLA.setOnClickListener(this);
         buttonNew.setOnClickListener(this);
+        buttonLogout.setOnClickListener(this);
 
+        String cityList = getIntent().getStringExtra(LoginActivity.KEY_CITY_LIST);
+        if (cityList != null && !cityList.isEmpty()) {
+            String[] cities = TextUtils.split(cityList, ",");
+            for (String city : cities) {
+                addCityToList(city, false);
+            }
+        }
+    }
+
+    private void addCityToList(String cityName, boolean save) {
+        for (int i = 0; i < locationContainer.getChildCount(); i++) {
+            View child = locationContainer.getChildAt(i);
+            if (child instanceof LinearLayout) {
+                TextView cityTextView = (TextView) ((LinearLayout) child).getChildAt(0);
+                if (cityTextView.getText().toString().equals(cityName)) {
+                    return;
+                }
+            }
+        }
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+
+        TextView cityText = new TextView(this);
+        cityText.setText(cityName);
+        cityText.setTextSize(18);
+        cityText.setLayoutParams(new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        Button detailsButton = new Button(this);
+        detailsButton.setText("Show Details");
+        detailsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, DetailsActivity.class);
+            intent.putExtra("city", cityName);
+            startActivity(intent);
+        });
+
+        row.addView(cityText);
+        row.addView(detailsButton);
+        locationContainer.addView(row);
+
+        if (save && account != null) {
+            String currentCityList = accountManager.getUserData(account, LoginActivity.KEY_CITY_LIST);
+            List<String> cities;
+
+            if (TextUtils.isEmpty(currentCityList)) {
+                cities = new ArrayList<>();
+            } else {
+                cities = new ArrayList<>(Arrays.asList(TextUtils.split(currentCityList, ",")));
+            }
+
+            if (!cities.contains(cityName)) {
+                cities.add(cityName);
+                String updatedCityList = TextUtils.join(",", cities);
+                accountManager.setUserData(account, LoginActivity.KEY_CITY_LIST, updatedCityList);
+            }
+        }
     }
 
     @Override
     public void onClick(View view) {
-        if (view.getId() == R.id.buttonAddLocation){
+        if (view.getId() == R.id.buttonAddLocation) {
             showAddLocationDialog();
+        } else if (view.getId() == R.id.buttonLogout) {
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
         }
     }
 }
-
