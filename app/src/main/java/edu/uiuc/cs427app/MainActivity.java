@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final String CITIES_KEY = "cities";
     private android.app.ProgressDialog progressDialog;
 
+    
+// this function basically will show the tab/dialogue once a user click the "Add City" button
     private void showAddLocationDialog() {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setTitle("Add a New City");
@@ -60,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
         builder.show();
     }
-
+// This function will show the error message once user writes the wrong message input 
     private void showInputErrorDialog(String message) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setTitle("⚠️ Input Error");
@@ -74,11 +76,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setIcon(android.R.drawable.ic_dialog_alert);
         builder.show();
     }
-
+    //it tests if the input has integers
     private boolean containsNumbers(String text) {
         return text.matches(".*\\d.*");
     }
-
+//it tests if the city is already existed in the list
     private boolean isCityAlreadyInList(String cityName) {
         // Get the normalized version of the input city name
         String normalizedInput = LocalCityValidator.getNormalizedCityName(cityName);
@@ -94,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         return false;
     }
-
+// it validate the city before writing to the city list. Otherwise, it shows error message
     private void validateAndAddCity(String cityName) {
         // Show progress dialog
         progressDialog = new android.app.ProgressDialog(this);
@@ -123,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }, 500); // 500ms delay to show the progress dialog
     }
-
+// if user successfully add a city to the list, it will have a success dialog message
     private void showSuccessDialog(String cityName) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setTitle("✅ City Added Successfully!");
@@ -132,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setIcon(android.R.drawable.ic_dialog_info);
         builder.show();
     }
-
+// if user fails to add a city, it will have a error message 
     private void showErrorDialog(String cityName, String errorMessage) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
         builder.setTitle("❌ City Not Found");
@@ -166,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setIcon(android.R.drawable.ic_dialog_alert);
         builder.show();
     }
-
+// it add the city ot the list 
     private void addCityToList(String cityName) {
         // Add to city list
         cityList.add(cityName);
@@ -177,7 +179,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Save to preferences
         saveCityList();
     }
-
+// it removes the selected city from the list
     private void removeCityFromList(String cityName, LinearLayout row) {
         // Remove from city list
         cityList.remove(cityName);
@@ -188,14 +190,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Save to preferences
         saveCityList();
     }
-
+//It saves your current list of cities to persistent storage
     private void saveCityList() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         Set<String> citySet = new HashSet<>(cityList);
         editor.putStringSet(CITIES_KEY, citySet);
         editor.apply();
     }
-
+// Loads the saved list of cities from SharedPreferences and restores it into memory.
+//If no cities were previously saved, initializes an empty list.
+//After loading, the method rebuilds the UI by adding each stored city back to the view.
     private void loadCityList() {
         Set<String> citySet = sharedPreferences.getStringSet(CITIES_KEY, new HashSet<>());
         cityList = new ArrayList<>(citySet);
