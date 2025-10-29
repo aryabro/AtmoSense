@@ -2,12 +2,17 @@ package edu.uiuc.cs427app;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.util.TypedValue;
 import android.view.View;
 
+import androidx.core.content.ContextCompat;
 import androidx.navigation.ui.AppBarConfiguration;
 
 import edu.uiuc.cs427app.databinding.ActivityMainBinding;
@@ -223,9 +228,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         cityText.setLayoutParams(new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
+        // Programatically creating buttons, intializing colors/shape (rounded corner)
+        GradientDrawable shape = new GradientDrawable();
+        shape.setCornerRadius(
+                TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 100,
+                        getResources().getDisplayMetrics())
+        );
+        shape.setColor(ContextCompat.getColor(this, android.R.color.darker_gray));
+        int padding = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 4,
+                getResources().getDisplayMetrics()
+        );
+
+        int marginHorizontal = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 2,
+                getResources().getDisplayMetrics()
+        );
+
+
         // Details button
-        android.widget.Button detailsButton = new android.widget.Button(this);
-        detailsButton.setText("Show Details");
+        Button detailsButton = new Button(this);
+        detailsButton.setText("Details");
+        detailsButton.setTextColor(Color.WHITE);
+        detailsButton.setBackground(shape);
+        detailsButton.setTypeface(null, Typeface.NORMAL);
+
+        LinearLayout.LayoutParams detailsParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        detailsParams.setMargins(marginHorizontal, 0, marginHorizontal, 0);
+        detailsButton.setLayoutParams(detailsParams);
+        detailsButton.setLayoutParams(detailsParams);
+        detailsButton.setMinHeight(0);
+        detailsButton.setMinimumHeight(0);
+        detailsButton.setPadding(padding, padding / 2, padding, padding / 2);
         detailsButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, DetailsActivity.class);
             intent.putExtra("city", cityName);
@@ -233,8 +271,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
 
         // Remove button
-        android.widget.Button removeButton = new android.widget.Button(this);
+        Button removeButton = new Button(this);
+        removeButton.setBackground(shape);
+        removeButton.setTypeface(null, Typeface.NORMAL);
         removeButton.setText("Remove");
+        removeButton.setTextColor(Color.WHITE);
+        removeButton.setMinHeight(0);
+        removeButton.setMinimumHeight(0);
+
+        LinearLayout.LayoutParams removeParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        removeParams.setMargins(marginHorizontal, 0, marginHorizontal, 0);
+        removeButton.setLayoutParams(removeParams);
+        removeButton.setLayoutParams(removeParams);
+        removeButton.setPadding(padding, padding / 2, padding, padding / 2);
         removeButton.setOnClickListener(v -> removeCityFromList(cityName, row));
 
         row.addView(cityText);
