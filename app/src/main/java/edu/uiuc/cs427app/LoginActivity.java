@@ -10,10 +10,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.widget.ProgressBar; //temp for llm-ui branch
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,10 +31,11 @@ import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static final String TAG = "GeminiAPI";
+//    private static final String TAG = "GeminiAPI";
     public static final String ACCOUNT_TYPE = "edu.uiuc.cs427app";
     public static final String AUTH_TOKEN_TYPE = "full_access";
     public static final String KEY_CITY_LIST = "cityList";
+    private ProgressBar progressBar; //temp for llm-ui branch
 
     private AccountManager accountManager;
     private EditText usernameEditText, passwordEditText, themeDescriptionEditText;
@@ -121,8 +124,8 @@ public class LoginActivity extends AppCompatActivity {
     private void generateTheme(String description, Intent intent) {
         String apiKey = BuildConfig.GEMINI_API_KEY;
         if (apiKey == null || apiKey.isEmpty()) {
-            Toast.makeText(this, "API key is not set. Please add it to your local.properties file.", Toast.LENGTH_LONG).show();
-            applyDefaultTheme();
+            Toast.makeText(this, "API key is not added. Please add it to your local.properties file.", Toast.LENGTH_LONG).show();
+//            applyDefaultTheme();
             return;
         }
 
@@ -132,22 +135,19 @@ public class LoginActivity extends AppCompatActivity {
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
-                URL url = new URL("https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" + apiKey);
+                URL url = new URL("https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key=" + apiKey);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
 
-                JSONObject textPart = new JSONObject();
-                textPart.put("text", "Generate a UI theme based on the following description: " + description + ". " +
-                        "Provide a JSON object with 'backgroundColor' and 'textColor' in hex format.");
-
-                JSONObject content = new JSONObject();
-                content.put("parts", new JSONArray().put(textPart));
-
-                JSONObject jsonRequestBody = new JSONObject();
-                jsonRequestBody.put("contents", new JSONArray().put(content));
-
-                String jsonBody = jsonRequestBody.toString();
+                String jsonBody = "{" +
+                        "\"contents\": [{" +
+                        "\"parts\":[{" +
+                        "\"text\": \"Generate a UI theme based on the following description: " + description + ". " +
+                        "Provide a JSON object with 'backgroundColor' and 'textColor' in hex format.\"" +
+                        "}]" +
+                        "}]" +
+                        "}";
 
                 conn.setDoOutput(true);
                 try (OutputStream os = conn.getOutputStream()) {
@@ -166,13 +166,75 @@ public class LoginActivity extends AppCompatActivity {
                         }
                     }
 
+                    try {
+                        JSONObject jsonResponse = new JSONObject(response.toString());
+                        String resultText = jsonResponse.getJSONArray("candidates")
+                                .getJSONObject(0)
+                                .getJSONObject("content")
+                                .getJSONArray("parts")
+                                .getJSONObject(0)
+                                .getString("text");
+
+                        int start = resultText.indexOf("{");
+                        int end = resultText.lastIndexOf("}");
+                        if (start != -1 && end != -1 && end > start) {
+                            String jsonString = resultText.substring(start, end + 1);
+                            JSONObject theme = new JSONObject(jsonString);
+                            String backgroundColor = theme.getString("backgroundColor");
+                            String textColor = theme.getString("textColor");
+                            handler.post(() -> {
+                                applyTheme(backgroundColor, textColor);
+                                startActivity(intent);
+                                finish();
+                            });
+                        } else {
+                            handler.post(() -> {
+                                Toast.makeText(LoginActivity.this, "Failed to parse theme. Applying default.", Toast.LENGTH_LONG).show();
+                                applyDefaultTheme();
+                                startActivity(intent);
+                                finish();
+                            });
+                        }
+                    } catch (Exception parseException) {
+                        handler.post(() -> {
+                            Toast.makeText(LoginActivity.this, "Failed to parse theme. Applying default.", Toast.LENGTH_LONG).show();
+                            applyDefaultTheme();
+                            startActivity(intent);
+                            finish();
+                        });
+                    }
+                } else {
+                    handler.post(() -> {
+                        Toast.makeText(LoginActivity.this, "Failed to generate theme. Applying default.", Toast.LENGTH_LONG).show();
+                        applyDefaultTheme();
+                        startActivity(intent);
+                        finish();
+                    });
+                }
+
+            } catch (Exception e) {
+                handler.post(() -> {
+                    Toast.makeText(LoginActivity.this, "Failed to generate theme. Applying default.", Toast.LENGTH_LONG).show();
+                    applyDefaultTheme();
+                    startActivity(intent);
+                    finish();
+                });
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        });
+    }
+/*  temp for llm-ui branch
+    private void generateTheme(String description, Intent intent) {
                     JSONObject jsonResponse = new JSONObject(response.toString());
-                    String resultText = jsonResponse.getJSONArray("candidates")
-                            .getJSONObject(0)
-                            .getJSONObject("content")
-                            .getJSONArray("parts")
-                            .getJSONObject(0)
-                            .getString("text");
+                        String resultText = jsonResponse.getJSONArray("candidates")
+                                .getJSONObject(0)
+                                .getJSONObject("content")
+                                .getJSONArray("parts")
+                                .getJSONObject(0)
+                                .getString("text");
 
                     String jsonString = resultText.replace("```json", "").replace("```", "").trim();
                     JSONObject theme = new JSONObject(jsonString);
@@ -208,6 +270,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
     }
+*/
 
     private void applyTheme(String backgroundColor, String textColor) {
         loginLayout.setBackgroundColor(Color.parseColor(backgroundColor));
