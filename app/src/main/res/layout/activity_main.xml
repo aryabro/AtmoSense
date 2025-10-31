@@ -32,7 +32,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="50dp"
                 android:textSize="24sp"
-                android:textColor="@color/black"
                 android:textIsSelectable="false"
                 android:textStyle="bold"
                 android:text="@string/locations_title" />
