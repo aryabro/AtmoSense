@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends BaseActivity implements View.OnClickListener {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private volatile boolean importAttempted = false;
     private AccountManager accountManager;
     private Account account;
+    private String username; // Current logged-in username required for theme
 
     private void importCitiesFromCSV() {
         new Thread(() -> {
@@ -388,6 +389,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         detailsButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, DetailsActivity.class);
             intent.putExtra("city", cityName);
+            intent.putExtra("username", username);
             startActivity(intent);
         });
 
@@ -424,7 +426,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         cityList = new ArrayList<>();
 
         accountManager = AccountManager.get(this);
-        String username = getIntent().getStringExtra("username");
+        username = getIntent().getStringExtra("username");
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Team #417 - " + username);
         }
