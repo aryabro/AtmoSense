@@ -358,6 +358,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         android.widget.TextView cityText = new android.widget.TextView(this);
         cityText.setText(cityName);
         cityText.setTextSize(18);
+        cityText.setTextColor(android.graphics.Color.parseColor(ThemeManager.getTextColor(this)));
         cityText.setLayoutParams(new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
