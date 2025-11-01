@@ -114,7 +114,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         return result;
     }
 
-    // this function basically will show the tab/dialogue once a user click the "Add
+    // This function basically will show the tab/dialogue once a user click the "Add
     // City" button
     private void showAddLocationDialog() {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
@@ -163,12 +163,12 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         builder.show();
     }
 
-    // it tests if the input has integers
+    // It tests if the input has integers
     private boolean containsNumbers(String text) {
         return text.matches(".*\\d.*");
     }
-    // it tests if the city is already existed in the list
 
+    // It tests if the city is already existed in the list
     private boolean isCityAlreadyInList(String cityName) {
         if (cityName == null) {
             return false;
@@ -182,7 +182,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         return false;
     }
 
-    // it validate the city before writing to the city list. Otherwise, it shows
+    // It validates the city before writing to the city list. Otherwise, it shows
     // error message
     private void validateAndAddCity(String cityName) {
         // Show progress dialog
@@ -261,7 +261,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         return new ArrayList<>();
     }
 
-    // if user successfully add a city to the list, it will have a success dialog
+    // If user successfully adds a city to the list, it will have a success dialog
     // message
     private void showSuccessDialog(String cityName) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
@@ -271,7 +271,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         builder.setIcon(android.R.drawable.ic_dialog_info);
         builder.show();
     }
-    //this shows the city list once user writes a city name 
+    // This shows the city list once user writes a city name
     // there would be many places that share the same city name
     private void showCityChoiceDialog(List<City> cities) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
@@ -290,7 +290,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         builder.show();
     }
 
-    // it add the city ot the list
+    // It adds the city to the list
     private void addCityToList(String cityName) {
         // Add to city list
         cityList.add(cityName);
@@ -302,7 +302,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         saveCityList();
     }
 
-    // it removes the selected city from the list
+    // It removes the selected city from the list
     private void removeCityFromList(String cityName, LinearLayout row) {
         // Remove from city list
         cityList.remove(cityName);

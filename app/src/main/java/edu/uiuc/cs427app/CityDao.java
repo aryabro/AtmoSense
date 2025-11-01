@@ -8,15 +8,19 @@ import java.util.List;
 
 @Dao
 public interface CityDao {
+    // Retrieves all cities from the database.
     @Query("SELECT * FROM cities")
     List<City> getAllCities();
 
+    // Inserts a list of cities into the database.
     @Insert
     void insertAll(List<City> cities);
 
+    // Finds a city by its name (case-insensitive).
     @Query("SELECT * FROM cities WHERE LOWER(city) = LOWER(:name) OR LOWER(city_ascii) = LOWER(:name)")
     List<City> findAllByName(String name);
 
+    // Counts the total number of cities in the database.
     @Query("SELECT COUNT(*) FROM cities")
     int countCities();
 }

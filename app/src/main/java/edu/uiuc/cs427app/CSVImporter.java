@@ -8,6 +8,7 @@ import java.util.List;
 
 public class CSVImporter {
 
+    // Imports city data from a CSV file and stores it in the database.
     public static void importCities(Context context) {
         new Thread(() -> {
             try {
@@ -17,7 +18,7 @@ public class CSVImporter {
 
                 List<City> cities = new ArrayList<>();
                 String line;
-                reader.readLine(); // 跳过 header
+                reader.readLine(); // Skip the header
                 while ((line = reader.readLine()) != null) {
                     String[] parts = line.split(",");
                     String city = parts[0];

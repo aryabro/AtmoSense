@@ -14,17 +14,20 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
 
     private final Context mContext;
 
+    // Constructor for the AccountAuthenticator.
     public AccountAuthenticator(Context context) {
         super(context);
         mContext = context;
     }
 
     @Override
+    // Not implemented, returns null.
     public Bundle editProperties(AccountAuthenticatorResponse response, String accountType) {
         return null;
     }
 
     @Override
+    // Adds a new account to the AccountManager.
     public Bundle addAccount(AccountAuthenticatorResponse response, String accountType, String authTokenType, String[] requiredFeatures, Bundle options) throws NetworkErrorException {
         final Intent intent = new Intent(mContext, LoginActivity.class);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
@@ -34,11 +37,13 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
     }
 
     @Override
+    // Not implemented, returns null.
     public Bundle confirmCredentials(AccountAuthenticatorResponse response, Account account, Bundle options) throws NetworkErrorException {
         return null;
     }
 
     @Override
+    // Gets the authentication token for an account.
     public Bundle getAuthToken(AccountAuthenticatorResponse response, Account account, String authTokenType, Bundle options) throws NetworkErrorException {
         final AccountManager am = AccountManager.get(mContext);
         String authToken = am.peekAuthToken(account, authTokenType);
@@ -68,16 +73,19 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
     }
 
     @Override
+    // Not implemented, returns null.
     public String getAuthTokenLabel(String authTokenType) {
         return null;
     }
 
     @Override
+    // Not implemented, returns null.
     public Bundle updateCredentials(AccountAuthenticatorResponse response, Account account, String authTokenType, Bundle options) throws NetworkErrorException {
         return null;
     }
 
     @Override
+    // Not implemented, returns null.
     public Bundle hasFeatures(AccountAuthenticatorResponse response, Account account, String[] features) throws NetworkErrorException {
         return null;
     }

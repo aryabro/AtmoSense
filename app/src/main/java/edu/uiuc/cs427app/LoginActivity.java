@@ -41,6 +41,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText usernameEditText, passwordEditText, themeDescriptionEditText;
     private Button loginButton, signUpButton;
 
+    // Initializes the activity, sets up the UI, and assigns button click listeners.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,6 +60,7 @@ public class LoginActivity extends AppCompatActivity {
         signUpButton.setOnClickListener(v -> signUp());
     }
 
+    // Handles the sign-in process, validates credentials, and transitions to the main activity.
     private void signIn() {
         String username = usernameEditText.getText().toString();
         String password = passwordEditText.getText().toString();
@@ -121,6 +123,7 @@ public class LoginActivity extends AppCompatActivity {
         Toast.makeText(this, "Invalid username or password", Toast.LENGTH_SHORT).show();
     }
 
+    // Handles the sign-up process, creates a new account, and transitions to the main activity.
     private void signUp() {
         String username = usernameEditText.getText().toString();
         String password = passwordEditText.getText().toString();

@@ -11,6 +11,7 @@ import android.widget.Toast;
 public class DetailsActivity extends BaseActivity implements View.OnClickListener{
 
     @Override
+    // Called when the activity is first created.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_details);
@@ -34,6 +35,7 @@ public class DetailsActivity extends BaseActivity implements View.OnClickListene
     }
 
     @Override
+    // Handles click events for the views.
     public void onClick(View view) {
         //Implement this (create an Intent that goes to a new Activity, which shows the map)
     }
