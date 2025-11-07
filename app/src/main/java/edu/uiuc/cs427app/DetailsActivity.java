@@ -2,6 +2,7 @@ package edu.uiuc.cs427app;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -28,9 +29,15 @@ public class DetailsActivity extends BaseActivity implements View.OnClickListene
         setContentView(R.layout.activity_details);
 
         // Process the Intent payload that has opened this Activity and show the information accordingly
-        cityName = getIntent().getStringExtra("city").toString();
-        String welcome = "Welcome to the "+cityName;
-        String cityWeatherInfo = "Detailed information about the weather of "+cityName;
+        cityName = getIntent().getStringExtra("city");
+        if (TextUtils.isEmpty(cityName)) {
+            Toast.makeText(this, "City not provided.", Toast.LENGTH_SHORT).show();
+            finish(); // Close the activity if no city is provided
+            return;
+        }
+
+        String welcome = "Welcome to " + cityName;
+        String cityWeatherInfo = "Detailed information about the weather of " + cityName;
 
         // Initializing the GUI elements
         TextView welcomeMessage = findViewById(R.id.welcomeText);
@@ -48,7 +55,7 @@ public class DetailsActivity extends BaseActivity implements View.OnClickListene
     // Handles click events for the views.
     public void onClick(View view) {
         String weatherApiKey = BuildConfig.WEATHER_API_KEY;
-        if (weatherApiKey == null || weatherApiKey.isEmpty()) {
+        if (TextUtils.isEmpty(weatherApiKey)) {
             Log.e(TAG, "Weather API key is missing.");
             Toast.makeText(DetailsActivity.this, "API Key is missing", Toast.LENGTH_SHORT).show();
             return;
@@ -81,8 +88,6 @@ public class DetailsActivity extends BaseActivity implements View.OnClickListene
 
                     apiResponse = content.toString();
                     Log.d(TAG, "SUCCESS - API Response: " + apiResponse);
-                    String finalApiResponse = apiResponse;
-                    //runOnUiThread(() -> Toast.makeText(DetailsActivity.this, finalApiResponse, Toast.LENGTH_SHORT).show());
 
                     // Now, we attempt to parse
                     JSONArray jsonArray = new JSONArray(apiResponse);

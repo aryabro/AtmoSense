@@ -1,5 +1,6 @@
 package edu.uiuc.cs427app;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -10,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MapActivity extends AppCompatActivity {
 
+    @SuppressLint("SetJavaScriptEnabled") // Required for Google Maps embed
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,7 +26,8 @@ public class MapActivity extends AppCompatActivity {
         WebView webView = findViewById(R.id.map_webview);
 
         cityNameView.setText(cityName);
-        coordinatesView.setText("Lat: " + lat + ", Lon: " + lng);
+        // Use String.format to avoid concatenation warnings
+        coordinatesView.setText(String.format("Lat: %s, Lon: %s", lat, lng));
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
