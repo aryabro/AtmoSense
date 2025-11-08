@@ -20,6 +20,10 @@ public interface CityDao {
     @Query("SELECT * FROM cities WHERE LOWER(city) = LOWER(:name)")
     List<City> findAllByName(String name);
 
+    // Finds a city by its id.
+    @Query("SELECT * FROM cities WHERE id = :id")
+    City findById(int id);
+
     // Counts the total number of cities in the database.
     @Query("SELECT COUNT(*) FROM cities")
     int countCities();

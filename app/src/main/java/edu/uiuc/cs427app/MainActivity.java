@@ -38,7 +38,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
     private LinearLayout locationContainer;
-    private ArrayList<String> cityList;
+    private ArrayList<Integer> cityList; // Store city IDs instead of names
     private static final String ACCOUNT_CITIES_KEY = "cities"; // stored in AccountManager userData
     private android.app.ProgressDialog progressDialog;
     private volatile boolean importAttempted = false;
@@ -141,9 +141,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             }
 
             // Basic input validation
-            if (isCityAlreadyInList(cityName)) {
-                showInputErrorDialog("This city already exists in your list!");
-            } else if (containsNumbers(cityName)) {
+            if (containsNumbers(cityName)) {
                 showInputErrorDialog("City names should not contain numbers. Please enter a valid city name.");
             } else {
                 validateAndAddCity(cityName);
@@ -175,17 +173,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     }
 
     // It tests if the city is already existed in the list
-    private boolean isCityAlreadyInList(String cityName) {
-        if (cityName == null) {
-            return false;
-        }
-        String normalizedInput = cityName.trim().toLowerCase();
-        for (String existingCity : cityList) {
-            if (existingCity != null && existingCity.toLowerCase().equals(normalizedInput)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean isCityAlreadyInList(int cityId) {
+        return cityList.contains(cityId);
     }
 
     // It validates the city before writing to the city list. Otherwise, it shows
@@ -244,8 +233,12 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                         showInputErrorDialog("This may be not a valid city in the real world.");
                     } else if (matchedCities.size() == 1) {
                         City city = matchedCities.get(0);
-                        addCityToList(city.getCity());
-                        showSuccessDialog(city.getCity());
+                        if (isCityAlreadyInList(city.getId())) {
+                            showInputErrorDialog("This city already exists in your list!");
+                        } else {
+                            addCityToList(city);
+                            showSuccessDialog(city.getCity() + ", " + city.getCountry());
+                        }
                     } else {
                         showCityChoiceDialog(matchedCities);
                     }
@@ -282,7 +275,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     // there would be many places that share the same city name
     private void showCityChoiceDialog(List<City> cities) {
         android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Multiple Cities Found");
+        builder.setTitle("Multiple Cities Found - Please Select Country");
         String[] options = new String[cities.size()];
         for (int i = 0; i < cities.size(); i++) {
             City c = cities.get(i);
@@ -290,29 +283,33 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         }
         builder.setItems(options, (dialog, which) -> {
             City selectedCity = cities.get(which);
-            addCityToList(selectedCity.getCity());
-            showSuccessDialog(selectedCity.getCity());
+            if (isCityAlreadyInList(selectedCity.getId())) {
+                showInputErrorDialog("This city already exists in your list!");
+            } else {
+                addCityToList(selectedCity);
+                showSuccessDialog(selectedCity.getCity() + ", " + selectedCity.getCountry());
+            }
         });
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
         builder.show();
     }
 
     // It adds the city to the list
-    private void addCityToList(String cityName) {
-        // Add to city list
-        cityList.add(cityName);
+    private void addCityToList(City city) {
+        // Add city ID to city list
+        cityList.add(city.getId());
 
         // Add to UI
-        addCityToUI(cityName);
+        addCityToUI(city.getId());
 
         // Save to preferences
         saveCityList();
     }
 
     // It removes the selected city from the list
-    private void removeCityFromList(String cityName, LinearLayout row) {
+    private void removeCityFromList(int cityId, LinearLayout row) {
         // Remove from city list
-        cityList.remove(cityName);
+        cityList.remove((Integer) cityId);
 
         // Remove from UI
         locationContainer.removeView(row);
@@ -323,9 +320,15 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
     // It saves your current list of cities to persistent storage
     private void saveCityList() {
-        // Persist the city list to the current account so each user has their own list
+        // Persist the city list (IDs) to the current account so each user has their own
+        // list
         if (account != null && accountManager != null) {
-            String joined = TextUtils.join(",", cityList);
+            // Convert Integer list to String array for storage
+            String[] idStrings = new String[cityList.size()];
+            for (int i = 0; i < cityList.size(); i++) {
+                idStrings[i] = String.valueOf(cityList.get(i));
+            }
+            String joined = TextUtils.join(",", idStrings);
             accountManager.setUserData(account, ACCOUNT_CITIES_KEY, joined);
         } else {
             // Fallback to SharedPreferences if account is unavailable
@@ -342,12 +345,18 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         if (account != null && accountManager != null) {
             String stored = accountManager.getUserData(account, ACCOUNT_CITIES_KEY);
             if (stored != null && !stored.isEmpty()) {
-                String[] cities = TextUtils.split(stored, ",");
-                for (String c : cities) {
-                    String name = c == null ? null : c.trim();
-                    if (name != null && !name.isEmpty()) {
-                        cityList.add(name);
-                        addCityToUI(name);
+                String[] cityIds = TextUtils.split(stored, ",");
+                for (String idStr : cityIds) {
+                    String id = idStr == null ? null : idStr.trim();
+                    if (id != null && !id.isEmpty()) {
+                        try {
+                            int cityId = Integer.parseInt(id);
+                            cityList.add(cityId);
+                            addCityToUI(cityId);
+                        } catch (NumberFormatException e) {
+                            // Skip invalid IDs
+                            continue;
+                        }
                     }
                 }
             }
@@ -356,11 +365,31 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
     // Dynamically add a city entry (name + WEATHER + MAP + REMOVE buttons) to the
     // UI
-    private void addCityToUI(String cityName) {
+    private void addCityToUI(int cityId) {
+        // Fetch city information from database in background thread
+        new Thread(() -> {
+            try {
+                CityDao dao = DatabaseClient.getInstance(this)
+                        .getAppDatabase()
+                        .cityDao();
+                City city = dao.findById(cityId);
+                if (city != null) {
+                    runOnUiThread(() -> {
+                        createCityUIEntry(city, cityId);
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    // Creates the UI entry for a city
+    private void createCityUIEntry(City city, int cityId) {
         // Create vertical container for city entry
         LinearLayout cityEntry = new LinearLayout(this);
         cityEntry.setOrientation(LinearLayout.VERTICAL);
-        cityEntry.setTag(cityName); // Tag for easy identification
+        cityEntry.setTag(cityId); // Tag for easy identification using city ID
 
         LinearLayout.LayoutParams entryParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -370,7 +399,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         // City name text view - displayed prominently on top
         android.widget.TextView cityText = new android.widget.TextView(this);
-        cityText.setText(cityName);
+        cityText.setText(city.getCity());
         cityText.setTextSize(20);
         cityText.setTypeface(null, Typeface.BOLD);
         cityText.setTextColor(android.graphics.Color.parseColor(ThemeManager.getTextColor(this)));
@@ -418,7 +447,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         weatherButton.setTextColor(Color.WHITE);
         weatherButton.setBackground(purpleButtonShape);
         weatherButton.setTypeface(null, Typeface.BOLD);
-        weatherButton.setTextAllCaps(true);
 
         LinearLayout.LayoutParams weatherParams = new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
@@ -428,39 +456,14 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         weatherButton.setMinimumHeight(0);
         weatherButton.setPadding(padding, padding / 2, padding, padding / 2);
         weatherButton.setOnClickListener(v -> {
-            // Fetch city coordinates from database and open WeatherActivity
-            new Thread(() -> {
-                try {
-                    CityDao dao = DatabaseClient.getInstance(this)
-                            .getAppDatabase()
-                            .cityDao();
-                    City city = dao.findFirstByName(cityName);
-                    if (city != null) {
-                        runOnUiThread(() -> {
-                            Intent intent = new Intent(this, WeatherActivity.class);
-                            intent.putExtra("city", cityName);
-                            intent.putExtra("lat", city.getLat());
-                            intent.putExtra("lng", city.getLng());
-                            intent.putExtra("username", username);
-                            startActivity(intent);
-                        });
-                    } else {
-                        runOnUiThread(() -> {
-                            Intent intent = new Intent(this, WeatherActivity.class);
-                            intent.putExtra("city", cityName);
-                            intent.putExtra("username", username);
-                            startActivity(intent);
-                        });
-                    }
-                } catch (Exception e) {
-                    runOnUiThread(() -> {
-                        Intent intent = new Intent(this, WeatherActivity.class);
-                        intent.putExtra("city", cityName);
-                        intent.putExtra("username", username);
-                        startActivity(intent);
-                    });
-                }
-            }).start();
+            // Open WeatherActivity with city ID
+            Intent intent = new Intent(this, WeatherActivity.class);
+            intent.putExtra("cityId", cityId);
+            intent.putExtra("city", city.getCity());
+            intent.putExtra("lat", city.getLat());
+            intent.putExtra("lng", city.getLng());
+            intent.putExtra("username", username);
+            startActivity(intent);
         });
 
         // MAP button
@@ -469,7 +472,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         mapButton.setTextColor(Color.WHITE);
         mapButton.setBackground(purpleButtonShape);
         mapButton.setTypeface(null, Typeface.BOLD);
-        mapButton.setTextAllCaps(true);
 
         LinearLayout.LayoutParams mapParams = new LinearLayout.LayoutParams(
                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
@@ -480,7 +482,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         mapButton.setPadding(padding, padding / 2, padding, padding / 2);
         mapButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, MapActivity.class);
-            intent.putExtra("city", cityName);
+            intent.putExtra("city", city.getCity());
             intent.putExtra("username", username);
             startActivity(intent);
         });
@@ -491,7 +493,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         removeButton.setTypeface(null, Typeface.BOLD);
         removeButton.setText("REMOVE");
         removeButton.setTextColor(Color.WHITE);
-        removeButton.setTextAllCaps(true);
         removeButton.setMinHeight(0);
         removeButton.setMinimumHeight(0);
 
@@ -500,7 +501,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         removeParams.setMargins(0, 0, 0, 0);
         removeButton.setLayoutParams(removeParams);
         removeButton.setPadding(padding, padding / 2, padding, padding / 2);
-        removeButton.setOnClickListener(v -> removeCityFromList(cityName, cityEntry));
+        removeButton.setOnClickListener(v -> removeCityFromList(cityId, cityEntry));
 
         // Add views to layouts
         buttonRow.addView(weatherButton);
@@ -547,12 +548,65 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         String passedCityList = getIntent().getStringExtra(LoginActivity.KEY_CITY_LIST);
         if (passedCityList != null && !passedCityList.isEmpty()) {
-            String[] cities = TextUtils.split(passedCityList, ",");
-            for (String city : cities) {
-                String name = city == null ? null : city.trim();
-                if (name != null && !name.isEmpty()) {
-                    cityList.add(name);
-                    addCityToUI(name);
+            // Try to parse as IDs first (new format)
+            String[] cityIds = TextUtils.split(passedCityList, ",");
+            boolean allIds = true;
+            for (String idStr : cityIds) {
+                String id = idStr == null ? null : idStr.trim();
+                if (id != null && !id.isEmpty()) {
+                    try {
+                        Integer.parseInt(id);
+                    } catch (NumberFormatException e) {
+                        allIds = false;
+                        break;
+                    }
+                }
+            }
+
+            if (allIds) {
+                // New format: IDs
+                for (String idStr : cityIds) {
+                    String id = idStr == null ? null : idStr.trim();
+                    if (id != null && !id.isEmpty()) {
+                        try {
+                            int cityId = Integer.parseInt(id);
+                            cityList.add(cityId);
+                            addCityToUI(cityId);
+                        } catch (NumberFormatException e) {
+                            // Skip invalid IDs
+                            continue;
+                        }
+                    }
+                }
+            } else {
+                // Old format: city names - need to convert to IDs
+                // This is for backward compatibility
+                for (String cityName : cityIds) {
+                    String name = cityName == null ? null : cityName.trim();
+                    if (name != null && !name.isEmpty()) {
+                        // Find city by name and get ID
+                        new Thread(() -> {
+                            try {
+                                CityDao dao = DatabaseClient.getInstance(this)
+                                        .getAppDatabase()
+                                        .cityDao();
+                                List<City> cities = dao.findAllByName(name);
+                                if (cities != null && !cities.isEmpty()) {
+                                    City city = cities.get(0);
+                                    int cityId = city.getId();
+                                    if (!cityList.contains(cityId)) {
+                                        runOnUiThread(() -> {
+                                            cityList.add(cityId);
+                                            addCityToUI(cityId);
+                                            saveCityList();
+                                        });
+                                    }
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }).start();
+                    }
                 }
             }
             // Ensure the passed list is saved to the current account
