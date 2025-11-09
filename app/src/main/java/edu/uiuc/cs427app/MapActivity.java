@@ -10,12 +10,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MapActivity extends AppCompatActivity {
-
     @SuppressLint("SetJavaScriptEnabled") // Required for Google Maps embed
-import android.os.Bundle;
-import android.widget.TextView;
-
-public class MapActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +27,7 @@ public class MapActivity extends BaseActivity {
 
         cityNameView.setText(cityName);
         // Use String.format to avoid concatenation warnings
-        coordinatesView.setText(String.format("Lat: %s, Lon: %s", lat, lng));
+        coordinatesView.setText(String.format("Latitude: %s, Longitude: %s", lat, lng));
 
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -51,8 +46,5 @@ public class MapActivity extends BaseActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Map - " + cityName);
         }
-
-        TextView title = findViewById(R.id.mapTitle);
-        title.setText("Map for " + cityName);
     }
 }
