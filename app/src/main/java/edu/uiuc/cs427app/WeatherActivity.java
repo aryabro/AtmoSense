@@ -102,6 +102,12 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
                 Intent intent = new Intent(this, WeatherInsightsActivity.class);
                 intent.putExtra("city", cityName);
 
+                //dynamic theme support for weatherinsights
+                String username = getIntent().getStringExtra("username");
+                if (username != null) {
+                    intent.putExtra("username", username);
+                }
+
                 // Pass weather data
                 if (currentWeatherData.getMain() != null) {
                     intent.putExtra("temperature", currentWeatherData.getMain().getTemp());
