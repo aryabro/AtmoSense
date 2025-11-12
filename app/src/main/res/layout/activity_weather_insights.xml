@@ -29,6 +29,15 @@
             android:textSize="14sp"
             android:text="AI-generated questions based on current weather"/>
 
+        <Button
+            android:id="@+id/refreshQuestionsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:text="Refresh Questions"
+            android:textAllCaps="false"/>
+
         <ProgressBar
             android:id="@+id/insightsProgressBar"
             android:layout_width="wrap_content"
@@ -66,10 +75,20 @@
 
         <!-- Answer section -->
         <TextView
-            android:id="@+id/answerLabel"
+            android:id="@+id/selectedQuestionText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
+            android:textSize="16sp"
+            android:textStyle="italic"
+            android:textColor="#666666"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/answerLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:textSize="18sp"
             android:textStyle="bold"
             android:text="Answer"

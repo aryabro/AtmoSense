@@ -1,6 +1,8 @@
 package edu.uiuc.cs427app;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -16,25 +18,26 @@ import java.util.List;
 public class WeatherInsightsActivity extends BaseActivity {
 
     private static final String TAG = "WeatherInsights";
+    private static final int REFRESH_COOLDOWN_MS = 15000; // 15 seconds
 
     // Weather data from intent
     private String cityName;
     private double temperature;
     private int humidity;
     private String condition;
-    private String weatherMain;
     private double windSpeed;
     private double windDeg;
 
     // UI components
-    private TextView titleView;
     private TextView statusView;
     private TextView errorView;
     private ProgressBar progressBar;
     private LinearLayout questionsContainer;
     private TextView answerLabel;
+    private TextView selectedQuestionText;
     private TextView answerText;
     private View answerScrollView;
+    private Button refreshButton;
 
     // API client
     private GeminiApiClient geminiClient;
@@ -42,6 +45,9 @@ public class WeatherInsightsActivity extends BaseActivity {
     // State
     private List<String> generatedQuestions;
     private boolean isLoadingAnswer = false;
+    private long lastRefreshTime = 0;
+    private Handler refreshHandler;
+    private Runnable refreshCountdownRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,24 +59,28 @@ public class WeatherInsightsActivity extends BaseActivity {
         temperature = getIntent().getDoubleExtra("temperature", 0.0);
         humidity = getIntent().getIntExtra("humidity", 0);
         condition = getIntent().getStringExtra("condition");
-        weatherMain = getIntent().getStringExtra("weatherMain");
         windSpeed = getIntent().getDoubleExtra("windSpeed", 0.0);
         windDeg = getIntent().getDoubleExtra("windDeg", 0.0);
 
         // Initialize UI
-        titleView = findViewById(R.id.insightsTitle);
         statusView = findViewById(R.id.insightsStatus);
         errorView = findViewById(R.id.insightsError);
         progressBar = findViewById(R.id.insightsProgressBar);
         questionsContainer = findViewById(R.id.questionsContainer);
         answerLabel = findViewById(R.id.answerLabel);
+        selectedQuestionText = findViewById(R.id.selectedQuestionText);
         answerText = findViewById(R.id.answerText);
         answerScrollView = findViewById(R.id.answerScrollView);
+        refreshButton = findViewById(R.id.refreshQuestionsButton);
 
         // Set title
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("Weather Insights - " + cityName);
         }
+
+        //refresh handler
+        refreshHandler = new Handler(Looper.getMainLooper());
+        refreshButton.setOnClickListener(v -> onRefreshClicked());
 
         // Initialize Gemini client
         String apiKey = BuildConfig.GEMINI_API_KEY;
@@ -174,7 +184,6 @@ public class WeatherInsightsActivity extends BaseActivity {
 
         for (int i = 0; i < generatedQuestions.size(); i++) {
             final String question = generatedQuestions.get(i);
-            final int questionIndex = i;
 
             Button questionButton = new Button(this);
             questionButton.setText(question);
@@ -208,6 +217,7 @@ public class WeatherInsightsActivity extends BaseActivity {
 
         // Hide previous answer
         answerLabel.setVisibility(View.GONE);
+        selectedQuestionText.setVisibility(View.GONE);
         answerScrollView.setVisibility(View.GONE);
 
         String weatherSummary = buildWeatherSummary();
@@ -222,7 +232,7 @@ public class WeatherInsightsActivity extends BaseActivity {
             @Override
             public void onSuccess(String response) {
                 Log.d(TAG, "Answer response: " + response);
-                displayAnswer(response.trim());
+                displayAnswer(question, response.trim());
                 isLoadingAnswer = false;
                 disableQuestionButtons(false);
             }
@@ -240,11 +250,13 @@ public class WeatherInsightsActivity extends BaseActivity {
     /**
      * Displays the generated answer
      */
-    private void displayAnswer(String answer) {
+    private void displayAnswer(String question, String answer) {
         showLoading(false, null);
 
+        selectedQuestionText.setText(question);
         answerText.setText(answer);
         answerLabel.setVisibility(View.VISIBLE);
+        selectedQuestionText.setVisibility(View.VISIBLE);
         answerScrollView.setVisibility(View.VISIBLE);
 
         // Scroll to answer
@@ -289,9 +301,61 @@ public class WeatherInsightsActivity extends BaseActivity {
         errorView.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * Handles refresh button click
+     */
+    private void onRefreshClicked() {
+        long currentTime = System.currentTimeMillis();
+        long timeSinceLastRefresh = currentTime - lastRefreshTime;
+
+        //cooldown check
+        if (lastRefreshTime > 0 && timeSinceLastRefresh < REFRESH_COOLDOWN_MS) {
+            return;
+        }
+
+        lastRefreshTime = currentTime;
+        refreshButton.setEnabled(false);
+        updateRefreshButtonCountdown();
+        generateQuestions();
+    }
+
+    /**
+     * Updates the refresh button with countdown or enables it
+     */
+    private void updateRefreshButtonCountdown() {
+        long currentTime = System.currentTimeMillis();
+        long timeSinceLastRefresh = currentTime - lastRefreshTime;
+        long remainingTime = REFRESH_COOLDOWN_MS - timeSinceLastRefresh;
+
+        if (remainingTime > 0) {
+            // Still in cooldown
+            int secondsRemaining = (int) Math.ceil(remainingTime / 1000.0);
+            refreshButton.setText("Refresh (" + secondsRemaining + "s)");
+
+            // Schedule next update
+            if (refreshCountdownRunnable != null) {
+                refreshHandler.removeCallbacks(refreshCountdownRunnable);
+            }
+            refreshCountdownRunnable = this::updateRefreshButtonCountdown;
+            refreshHandler.postDelayed(refreshCountdownRunnable, 1000);
+        } else {
+            // Cooldown complete
+            refreshButton.setText("Refresh Questions");
+            refreshButton.setEnabled(true);
+            if (refreshCountdownRunnable != null) {
+                refreshHandler.removeCallbacks(refreshCountdownRunnable);
+                refreshCountdownRunnable = null;
+            }
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (refreshHandler != null && refreshCountdownRunnable != null) {
+            refreshHandler.removeCallbacks(refreshCountdownRunnable);
+        } 
+        
         if (geminiClient != null) {
             geminiClient.shutdown();
         }
