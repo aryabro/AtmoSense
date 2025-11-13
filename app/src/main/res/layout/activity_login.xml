@@ -125,7 +125,7 @@
                     android:textIsSelectable="false"
                     android:textStyle="bold"
                     android:typeface="normal"
-                    app:cornerRadius="100dp" />
+                    app:cornerRadius="8dp" />
 
                 <Button
                     android:id="@+id/CreateAccountButton"
