@@ -1,5 +1,5 @@
 package edu.uiuc.cs427app;
-
+import android.widget.ImageView;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -43,6 +43,7 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
     private TextView conditionView;
     private TextView humidityView;
     private TextView windView;
+    private ImageView weatherImageView;
     private TextView errorView;
     private Button insightsButton;
     private OkHttpClient client;
@@ -68,13 +69,14 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
         conditionView = findViewById(R.id.weatherCondition);
         humidityView = findViewById(R.id.weatherHumidity);
         windView = findViewById(R.id.weatherWind);
+        weatherImageView = findViewById(R.id.weatherImage);
         errorView = findViewById(R.id.weatherError);
         insightsButton = findViewById(R.id.weatherInsightsButton);
 
         client = new OkHttpClient();
         gson = new Gson();
         mainHandler = new Handler(Looper.getMainLooper());
-
+        WeatherAwareView weatherAwareView = new WeatherAwareView(this, weatherImageView);
         insightsButton.setOnClickListener(this);
 
         // If cityId is provided, fetch city info from database
@@ -373,6 +375,28 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
             windView.setText(String.format(Locale.getDefault(), "%.1f m/s %s", speed, direction));
         } else {
             windView.setText(NOT_AVAILABLE);
+        }
+
+        // Generate Gemini city image once weather data is displayed
+        if (weatherData.getWeather() != null && weatherData.getWeather().length > 0) {
+            String condition = weatherData.getWeather()[0].getDescription();
+            if (condition != null && !condition.isEmpty()) {
+                condition = condition.substring(0, 1).toUpperCase() + condition.substring(1);
+            }
+
+            // Figure out approximate time of day
+            java.time.LocalTime now = java.time.LocalTime.now();
+            String timeOfDay;
+            if (now.isBefore(java.time.LocalTime.NOON)) {
+                timeOfDay = "morning";
+            } else if (now.isBefore(java.time.LocalTime.of(18, 0))) {
+                timeOfDay = "afternoon";
+            } else {
+                timeOfDay = "evening";
+            }
+
+            WeatherAwareView weatherAwareView = new WeatherAwareView(this, weatherImageView);
+            weatherAwareView.generateCityImage(cityName, condition, timeOfDay);
         }
     }
 
