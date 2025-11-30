@@ -252,18 +252,6 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
             apiKey = apiKey.replace("\"", "").trim();
         }
 
-        // Fallback to hardcoded key if not configured (for testing)
-        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("\"\"") || apiKey.equals("")) {
-            Log.w(TAG, "API key not found in BuildConfig, using fallback");
-            apiKey = "994cc37a9f641179032b6ec366feb52d";
-        }
-
-        if (cityLat == 0.0 && cityLng == 0.0) {
-            showError("Invalid coordinates for " + cityName + " (lat: " + cityLat + ", lng: " + cityLng + ")");
-            Log.e(TAG, "Invalid coordinates: lat=" + cityLat + ", lng=" + cityLng);
-            return;
-        }
-
         Log.d(TAG, "Fetching weather for: " + cityName + " at (" + cityLat + ", " + cityLng + ")");
 
         AppIdlingResource.increment(); // Mark network request start
