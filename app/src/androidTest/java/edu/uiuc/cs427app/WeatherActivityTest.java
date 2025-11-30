@@ -53,7 +53,6 @@ import com.google.gson.Gson;
 
 @RunWith(AndroidJUnit4.class)
 public class WeatherActivityTest {
-
     private CityDao cityDao;
     private final Gson gson = new Gson();
 
@@ -1094,43 +1093,43 @@ public class WeatherActivityTest {
         scenario.close();
     }
 
-    // /**
-    //  * Test fetchCityFromDatabaseById with city having zero coordinates
-    //  * Covers lambda$fetchCityFromDatabaseById$3 else branch (coordinates == 0.0)
-    //  */
-    // @Test
-    // public void testFetchCityFromDatabaseByIdZeroCoordinates() {
-    //     // Insert a city with zero coordinates
-    //     City cityZeroCoords = new City("ZeroCoords", 0.0, 0.0, "United States", "US", "USA", "State", 3);
-    //     cityDao.insertAll(Arrays.asList(cityZeroCoords));
+    /**
+     * Test fetchCityFromDatabaseById with city having zero coordinates
+     * Covers lambda$fetchCityFromDatabaseById$3 else branch (coordinates == 0.0)
+     */
+    @Test
+    public void testFetchCityFromDatabaseByIdZeroCoordinates() {
+        // Insert a city with zero coordinates
+        City cityZeroCoords = new City("ZeroCoords", 0.0, 0.0, "United States", "US", "USA", "State", 3);
+        cityDao.insertAll(Arrays.asList(cityZeroCoords));
 
-    //     Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-    //     intent.putExtra("cityId", 3);
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("cityId", 3);
 
-    //     ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
 
-    //     try {
-    //         Thread.sleep(3000);
-    //     } catch (InterruptedException e) {
-    //         e.printStackTrace();
-    //     }
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-    //     onView(withId(R.id.weatherError))
-    //             .check(matches(isDisplayed()))
-    //             .check(matches(withText(" not founCoordinatesd for ZeroCoords")));
+        onView(withId(R.id.weatherError))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("Coordinates not found for ZeroCoords")));
 
-    //     onView(withId(R.id.weatherTemperature))
-    //             .check(matches(withText("Error")));
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(withText("Error")));
 
-    //     // Cleanup
-    //     try {
-    //         cityDao.deleteById(3);
-    //     } catch (Exception e) {
-    //         // Ignore
-    //     }
+        // Cleanup
+        try {
+            cityDao.deleteById(3);
+        } catch (Exception e) {
+            // Ignore
+        }
 
-    //     scenario.close();
-    // }
+        scenario.close();
+    }
 
     @Test
     public void testUpdateWeatherUI_NullWeatherData_ShowsError() {
