@@ -140,23 +140,21 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
         return now.format(fmt);
     }
 
-    // returns zoneID for a given city
     private ZoneId resolveZoneIdForCity(String city) {
         if (city == null) {
             return ZoneId.systemDefault();
         }
+    
         String key = city.trim().toLowerCase(Locale.ROOT);
-        Map<String, String> known = getKnownCityTimezones();
-        if (known.containsKey(key)) {
-            try {
-                return ZoneId.of(known.get(key));
-            } catch (Exception e) {
-                Log.w(TAG, "Invalid timezone for city: " + city, e);
-            }
+        String timezone = getKnownCityTimezones().get(key);
+    
+        if (timezone != null) {
+            return ZoneId.of(timezone);
         }
+    
         return ZoneId.systemDefault();
     }
-
+    
     // gets city timezones
     private Map<String, String> getKnownCityTimezones() {
         Map<String, String> map = new HashMap<>();
