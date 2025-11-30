@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WeatherAwareView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">edu.uiuc.cs427app</a> &gt; <span class="el_source">WeatherAwareView.java</span></div><h1>WeatherAwareView.java</h1><pre class="source lang-java linenums">package edu.uiuc.cs427app;
+
+import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.util.Log;
+import android.widget.ImageView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class WeatherAwareView {
+    private final Activity activity;
+    private final ImageView imageView;
+<span class="nc" id="L27">    private final OkHttpClient client = new OkHttpClient();</span>
+
+<span class="nc" id="L29">    public WeatherAwareView(Activity activity, ImageView imageView) {</span>
+<span class="nc" id="L30">        this.activity = activity;</span>
+<span class="nc" id="L31">        this.imageView = imageView;</span>
+<span class="nc" id="L32">    }</span>
+
+
+    public void generateCityImage(String cityName, String condition, String time) {
+
+<span class="nc" id="L37">        String prompt = &quot;Create a realistic image of &quot; + cityName +</span>
+                &quot; that matches this weather: &quot; + condition +
+                &quot; in the &quot; + time +
+                &quot;. Include lighting, reflections, and atmosphere details in a photorealistic style.&quot;;
+<span class="nc" id="L41">        Log.d(&quot;WeatherAwareView&quot;, &quot;Prompt: &quot; + prompt);</span>
+
+        // Build proper JSON body
+<span class="nc" id="L44">        JSONObject requestJson = new JSONObject();</span>
+        try {
+<span class="nc" id="L46">            JSONArray contents = new JSONArray();</span>
+
+<span class="nc" id="L48">            JSONObject part = new JSONObject();</span>
+<span class="nc" id="L49">            part.put(&quot;text&quot;, prompt);</span>
+
+<span class="nc" id="L51">            JSONObject contentObj = new JSONObject();</span>
+<span class="nc" id="L52">            contentObj.put(&quot;role&quot;, &quot;user&quot;);</span>
+<span class="nc" id="L53">            contentObj.put(&quot;parts&quot;, new JSONArray().put(part));</span>
+
+<span class="nc" id="L55">            contents.put(contentObj);</span>
+<span class="nc" id="L56">            requestJson.put(&quot;contents&quot;, contents);</span>
+
+<span class="nc" id="L58">        } catch (JSONException e) {</span>
+<span class="nc" id="L59">            Log.e(&quot;WeatherAwareView&quot;, &quot;JSON build error&quot;, e);</span>
+<span class="nc" id="L60">            return;</span>
+<span class="nc" id="L61">        }</span>
+
+        //Prepare HTTP request
+<span class="nc" id="L64">        String apiKey = BuildConfig.GEMINI_API_KEY;</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">        if (apiKey == null || apiKey.isEmpty()) {</span>
+<span class="nc" id="L66">            Log.e(&quot;WeatherAwareView&quot;, &quot;Missing Gemini API key!&quot;);</span>
+<span class="nc" id="L67">            return;</span>
+        }
+<span class="nc" id="L69">        apiKey = apiKey.replace(&quot;\&quot;&quot;, &quot;&quot;).trim();</span>
+
+<span class="nc" id="L71">        String url = &quot;https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=&quot; + apiKey;</span>
+<span class="nc" id="L72">        MediaType JSON = MediaType.parse(&quot;application/json; charset=utf-8&quot;);</span>
+<span class="nc" id="L73">        RequestBody body = RequestBody.create(requestJson.toString(), JSON);</span>
+
+<span class="nc" id="L75">        Request request = new Request.Builder()</span>
+<span class="nc" id="L76">                .url(url)</span>
+<span class="nc" id="L77">                .post(body)</span>
+<span class="nc" id="L78">                .build();</span>
+
+        //  Send request asynchronously
+<span class="nc" id="L81">        client.newCall(request).enqueue(new Callback() {</span>
+            @Override
+            public void onFailure(Call call, IOException e) {
+<span class="nc" id="L84">                Log.e(&quot;WeatherAwareView&quot;, &quot;Gemini Image API request failed&quot;, e);</span>
+<span class="nc" id="L85">            }</span>
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                if (!response.isSuccessful()) {</span>
+<span class="nc" id="L90">                    Log.e(&quot;WeatherAwareView&quot;, &quot;Unsuccessful response: &quot; + response.code() + &quot; &quot; + response.message());</span>
+<span class="nc" id="L91">                    Log.e(&quot;WeatherAwareView&quot;, &quot;Response body: &quot; + response.body().string());</span>
+<span class="nc" id="L92">                    return;</span>
+                }
+
+<span class="nc" id="L95">                String responseBody = response.body().string();</span>
+<span class="nc" id="L96">                Log.d(&quot;WeatherAwareView&quot;, &quot;Gemini Image Response: &quot; + responseBody);</span>
+
+                try {
+<span class="nc" id="L99">                    JSONObject jsonResponse = new JSONObject(responseBody);</span>
+<span class="nc" id="L100">                    JSONArray candidates = jsonResponse.getJSONArray(&quot;candidates&quot;);</span>
+<span class="nc" id="L101">                    JSONObject content = candidates.getJSONObject(0).getJSONObject(&quot;content&quot;);</span>
+<span class="nc" id="L102">                    JSONArray parts = content.getJSONArray(&quot;parts&quot;);</span>
+<span class="nc" id="L103">                    JSONObject imagePart = null;</span>
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                    for (int i = 0; i &lt; parts.length(); i++) {</span>
+<span class="nc" id="L106">                        JSONObject partObj = parts.getJSONObject(i);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                        if (partObj.has(&quot;inlineData&quot;)) {</span>
+<span class="nc" id="L108">                            imagePart = partObj.getJSONObject(&quot;inlineData&quot;);</span>
+<span class="nc" id="L109">                            break;</span>
+                        }
+                    }
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                    if (imagePart == null) {</span>
+<span class="nc" id="L114">                        Log.e(&quot;WeatherAwareView&quot;, &quot;No image found in response&quot;);</span>
+<span class="nc" id="L115">                        return;</span>
+                    }
+
+<span class="nc" id="L118">                    String base64Image = imagePart.getString(&quot;data&quot;);</span>
+
+
+<span class="nc" id="L121">                    byte[] imageBytes = Base64.decode(base64Image, Base64.DEFAULT);</span>
+<span class="nc" id="L122">                    Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);</span>
+
+<span class="nc" id="L124">                    activity.runOnUiThread(() -&gt; imageView.setImageBitmap(bitmap));</span>
+<span class="nc" id="L125">                } catch (JSONException e) {</span>
+<span class="nc" id="L126">                    Log.e(&quot;WeatherAwareView&quot;, &quot;Failed to parse Gemini image response&quot;, e);</span>
+<span class="nc" id="L127">                }</span>
+<span class="nc" id="L128">            }</span>
+        });
+<span class="nc" id="L130">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
