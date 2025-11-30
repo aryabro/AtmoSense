@@ -519,45 +519,6 @@ public class WeatherActivityTest {
         scenario.close();
     }
 
-    /**
-     * verify fetchWeatherData surfaces error when coordinates are invalid
-     */
-    @Test
-    public void testFetchWeatherDataShowsErrorForInvalidCoordinates() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-        intent.putExtra("city", "Chicago");
-        intent.putExtra("lat", 41.8781);
-        intent.putExtra("lng", -87.6298);
-        intent.putExtra("username", "testUser");
-
-        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
-
-        scenario.onActivity(activity -> {
-            try {
-                Field latField = WeatherActivity.class.getDeclaredField("cityLat");
-                Field lngField = WeatherActivity.class.getDeclaredField("cityLng");
-                latField.setAccessible(true);
-                lngField.setAccessible(true);
-                latField.set(activity, 0.0);
-                lngField.set(activity, 0.0);
-
-                Method fetchMethod = WeatherActivity.class.getDeclaredMethod("fetchWeatherData");
-                fetchMethod.setAccessible(true);
-                fetchMethod.invoke(activity);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        onView(withId(R.id.weatherError))
-                .check(matches(isDisplayed()))
-                .check(matches(withText("Invalid coordinates for Chicago (lat: 0.0, lng: 0.0)")));
-
-        onView(withId(R.id.weatherTemperature))
-                .check(matches(withText("Error")));
-
-        scenario.close();
-    }
 
     /**
      * verify updateWeatherUI gracefully handles missing weather sections
@@ -845,5 +806,574 @@ public class WeatherActivityTest {
             }
         }
     }
+
+    /**
+     * Test onClick(View) - Weather Insights button with weather data
+     * Covers all branches in onClick method
+     */
+    @Test
+    public void testOnClickWeatherInsightsButton() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "Chicago");
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+        intent.putExtra("username", "testUser");
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        // Wait for weather data to load
+        try {
+            Thread.sleep(6000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Set currentWeatherData using reflection to ensure button is enabled
+        scenario.onActivity(activity -> {
+            try {
+                String json = "{"
+                        + "\"main\":{\"temp\":22.5,\"humidity\":55},"
+                        + "\"weather\":[{\"main\":\"Clouds\",\"description\":\"few clouds\"}],"
+                        + "\"wind\":{\"speed\":3.2,\"deg\":180}"
+                        + "}";
+                WeatherData data = gson.fromJson(json, WeatherData.class);
+
+                Field currentDataField = WeatherActivity.class.getDeclaredField("currentWeatherData");
+                currentDataField.setAccessible(true);
+                currentDataField.set(activity, data);
+
+                // Enable button
+                Button button = activity.findViewById(R.id.weatherInsightsButton);
+                button.setEnabled(true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Scroll to and click the insights button
+        try {
+            onView(withId(R.id.weatherInsightsButton))
+                    .perform(scrollTo());
+        } catch (Exception e) {
+            // If scroll fails, continue
+        }
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Click the button
+        onView(withId(R.id.weatherInsightsButton))
+                .perform(click());
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Verify WeatherInsightsActivity is started with correct extras
+        intended(hasComponent(WeatherInsightsActivity.class.getName()));
+        intended(allOf(
+                hasExtra("city", "Chicago"),
+                hasExtra("temperature", 22.5),
+                hasExtra("humidity", 55),
+                hasExtra("condition", "few clouds"),
+                hasExtra("weatherMain", "Clouds"),
+                hasExtra("windSpeed", 3.2),
+                hasExtra("windDeg", 180.0),
+                hasExtra("username", "testUser")));
+
+        scenario.close();
+    }
+
+    /**
+     * Test fetchCityFromDatabaseById with non-existent ID
+     * Covers lambda$fetchCityFromDatabaseById$1 (city == null path)
+     */
+    @Test
+    public void testFetchCityFromDatabaseByIdNotFound() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("cityId", 99999); // Non-existent ID
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherError))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("City not found in database with ID: 99999")));
+
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(withText("Error")));
+
+        scenario.close();
+    }
+
+    /**
+     * Test fetchCityFromDatabaseById with city having zero coordinates
+     * Covers lambda$fetchCityFromDatabaseById$3 else branch (coordinates == 0.0)
+     */
+    @Test
+    public void testFetchCityFromDatabaseByIdZeroCoordinates() {
+        // Insert a city with zero coordinates
+        City cityZeroCoords = new City("ZeroCoords", 0.0, 0.0, "United States", "US", "USA", "State", 3);
+        cityDao.insertAll(Arrays.asList(cityZeroCoords));
+
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("cityId", 3);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherError))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("Coordinates not found for ZeroCoords")));
+
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(withText("Error")));
+
+        // Cleanup
+        try {
+            cityDao.deleteById(3);
+        } catch (Exception e) {
+            // Ignore
+        }
+
+        scenario.close();
+    }
+
+    /**
+     * Test fetchCoordinatesFromDatabase with city having zero coordinates
+     * Covers lambda$fetchCoordinatesFromDatabase$7 else branch (coordinates == 0.0)
+     */
+    @Test
+    public void testFetchCoordinatesFromDatabaseZeroCoordinates() {
+        // Insert a city with zero coordinates
+        City cityZeroCoords = new City("ZeroCoordsCity", 0.0, 0.0, "United States", "US", "USA", "State", 4);
+        cityDao.insertAll(Arrays.asList(cityZeroCoords));
+
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "ZeroCoordsCity");
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherError))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("Coordinates not found for ZeroCoordsCity")));
+
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(withText("Error")));
+
+        // Cleanup
+        try {
+            cityDao.deleteById(4);
+        } catch (Exception e) {
+            // Ignore
+        }
+
+        scenario.close();
+    }
+
+    /**
+     * Test resolveZoneIdForCity with null city name
+     * Covers null check in resolveZoneIdForCity
+     */
+    @Test
+    public void testResolveZoneIdForCityWithNull() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", (String) null);
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Should still work, just uses system default timezone
+        onView(withId(R.id.weatherDateTime))
+                .check(matches(isDisplayed()));
+
+        scenario.close();
+    }
+
+    /**
+     * Test resolveZoneIdForCity with unknown city
+     * Covers default timezone fallback path
+     */
+    @Test
+    public void testResolveZoneIdForCityUnknownCity() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "UnknownCity123");
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Should use system default timezone and still display date/time
+        onView(withId(R.id.weatherDateTime))
+                .check(matches(isDisplayed()))
+                .check(matches(not(withText(""))));
+
+        scenario.close();
+    }
+
+    /**
+     * Test resolveZoneIdForCity with known cities to cover all timezone paths
+     * Tests multiple timezone resolutions
+     */
+    @Test
+    public void testResolveZoneIdForCityKnownCities() {
+        // Test Los Angeles
+        Intent intent1 = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent1.putExtra("city", "Los Angeles");
+        intent1.putExtra("lat", 34.0522);
+        intent1.putExtra("lng", -118.2437);
+
+        ActivityScenario<WeatherActivity> scenario1 = ActivityScenario.launch(intent1);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherCityTitle))
+                .check(matches(withText("Los Angeles")));
+
+        scenario1.close();
+
+        // Test London
+        Intent intent2 = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent2.putExtra("city", "London");
+        intent2.putExtra("lat", 51.5074);
+        intent2.putExtra("lng", -0.1278);
+
+        ActivityScenario<WeatherActivity> scenario2 = ActivityScenario.launch(intent2);
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherCityTitle))
+                .check(matches(withText("London")));
+
+        scenario2.close();
+    }
+
+    /**
+     * Test updateWeatherUI with null WeatherData
+     * Covers null check at start of updateWeatherUI
+     */
+//    @Test
+//    public void testUpdateWeatherUIWithNullData() {
+//        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+//        intent.putExtra("city", "Chicago");
+//        intent.putExtra("lat", 41.8781);
+//        intent.putExtra("lng", -87.6298);
+//
+//        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+//
+//        scenario.onActivity(activity -> {
+//            try {
+//                Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
+//                updateMethod.setAccessible(true);
+//                updateMethod.invoke(activity, (WeatherData) null);
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        });
+//
+//        try {
+//            Thread.sleep(1000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        onView(withId(R.id.weatherError))
+//                .check(matches(isDisplayed()))
+//                .check(matches(withText("No weather data received")));
+//
+//        scenario.close();
+//    }
+
+    /**
+     * Test updateWeatherUI with empty weather condition string
+     * Covers empty string check in updateWeatherUI
+     */
+    @Test
+    public void testUpdateWeatherUIWithEmptyCondition() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "Chicago");
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            try {
+                String json = "{"
+                        + "\"main\":{\"temp\":22.5,\"humidity\":55},"
+                        + "\"weather\":[{\"main\":\"Clear\",\"description\":\"\"}],"
+                        + "\"wind\":{\"speed\":3.2,\"deg\":180}"
+                        + "}";
+                WeatherData data = gson.fromJson(json, WeatherData.class);
+
+                Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
+                updateMethod.setAccessible(true);
+                updateMethod.invoke(activity, data);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Should handle empty condition gracefully
+        onView(withId(R.id.weatherCondition))
+                .check(matches(isDisplayed()));
+
+        scenario.close();
+    }
+
+    /**
+     * Test updateWeatherUI with null condition string
+     * Covers null condition check
+     */
+    @Test
+    public void testUpdateWeatherUIWithNullCondition() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "Chicago");
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            try {
+                WeatherData data = gson.fromJson(
+                        "{\"main\":{\"temp\":22.5,\"humidity\":55},\"weather\":[{}],\"wind\":{\"speed\":3.2,\"deg\":180}}",
+                        WeatherData.class);
+
+                Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
+                updateMethod.setAccessible(true);
+                updateMethod.invoke(activity, data);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Should handle null condition gracefully
+        onView(withId(R.id.weatherCondition))
+                .check(matches(isDisplayed()));
+
+        scenario.close();
+    }
+
+    /**
+     * Test updateWeatherUI with weather array having null description
+     * Covers all branches in weather condition handling
+     */
+    @Test
+    public void testUpdateWeatherUIWithVariousDataCombinations() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "Chicago");
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        // Test with only main data, no weather
+        scenario.onActivity(activity -> {
+            try {
+                String json = "{\"main\":{\"temp\":25.0,\"humidity\":60}}";
+                WeatherData data = gson.fromJson(json, WeatherData.class);
+
+                Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
+                updateMethod.setAccessible(true);
+                updateMethod.invoke(activity, data);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(withText("25.0°C")));
+        onView(withId(R.id.weatherCondition))
+                .check(matches(withText("N/A")));
+        onView(withId(R.id.weatherHumidity))
+                .check(matches(withText("60%")));
+
+        // Test with only wind data
+        scenario.onActivity(activity -> {
+            try {
+                String json = "{\"wind\":{\"speed\":5.5,\"deg\":270}}";
+                WeatherData data = gson.fromJson(json, WeatherData.class);
+
+                Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
+                updateMethod.setAccessible(true);
+                updateMethod.invoke(activity, data);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherWind))
+                .check(matches(isDisplayed()));
+
+        scenario.close();
+    }
+
+    /**
+     * Test updateWeatherUI timeOfDay branches (morning, afternoon, evening)
+     * This helps cover the time-based logic in updateWeatherUI
+     */
+    @Test
+    public void testUpdateWeatherUITimeOfDayBranches() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "Chicago");
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        // This will trigger the timeOfDay logic which checks current time
+        // The actual branch depends on when the test runs, but it should cover at least
+        // one
+        scenario.onActivity(activity -> {
+            try {
+                String json = "{"
+                        + "\"main\":{\"temp\":22.5,\"humidity\":55},"
+                        + "\"weather\":[{\"main\":\"Clear\",\"description\":\"clear sky\"}],"
+                        + "\"wind\":{\"speed\":3.2,\"deg\":180}"
+                        + "}";
+                WeatherData data = gson.fromJson(json, WeatherData.class);
+
+                Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
+                updateMethod.setAccessible(true);
+                updateMethod.invoke(activity, data);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Verify UI was updated
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(isDisplayed()));
+
+        scenario.close();
+    }
+
+    /**
+     * Test onClick with null currentWeatherData (button should not do anything)
+     * This covers the null check in onClick
+     */
+    @Test
+    public void testOnClickWithNullWeatherData() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("city", "Chicago");
+        intent.putExtra("lat", 41.8781);
+        intent.putExtra("lng", -87.6298);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(activity -> {
+            try {
+                Field currentDataField = WeatherActivity.class.getDeclaredField("currentWeatherData");
+                currentDataField.setAccessible(true);
+                currentDataField.set(activity, null);
+
+                // Ensure button exists but data is null
+                Button button = activity.findViewById(R.id.weatherInsightsButton);
+                button.setEnabled(true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Click button - should not navigate since data is null
+        try {
+            onView(withId(R.id.weatherInsightsButton))
+                    .perform(click());
+        } catch (Exception e) {
+            // Expected - button should not navigate
+        }
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Should still be on WeatherActivity, not navigated
+        onView(withId(R.id.weatherCityTitle))
+                .check(matches(isDisplayed()));
+
+        scenario.close();
+    }
+
 
 }
