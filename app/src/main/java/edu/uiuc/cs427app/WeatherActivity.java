@@ -180,7 +180,6 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
     private void fetchCityFromDatabaseById(int cityId) {
         AppIdlingResource.increment(); // Mark async operation start
         new Thread(() -> {
-            try {
                 CityDao dao = DatabaseClient.getInstance(this).getAppDatabase().cityDao();
                 City city = dao.findById(cityId);
                 if (city != null) {
@@ -206,12 +205,6 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
                         AppIdlingResource.decrement(); // Mark async operation complete
                     });
                 }
-            } catch (Exception e) {
-                mainHandler.post(() -> {
-                    showError("Failed to fetch city: " + e.getMessage());
-                    AppIdlingResource.decrement(); // Mark async operation complete
-                });
-            }
         }).start();
     }
 
@@ -219,7 +212,6 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
     private void fetchCoordinatesFromDatabase() {
         AppIdlingResource.increment(); // Mark async operation start
         new Thread(() -> {
-            try {
                 CityDao dao = DatabaseClient.getInstance(this).getAppDatabase().cityDao();
                 List<City> cities = dao.findAllByName(cityName);
                 if (cities != null && !cities.isEmpty()) {
@@ -240,12 +232,6 @@ public class WeatherActivity extends BaseActivity implements View.OnClickListene
                         AppIdlingResource.decrement(); // Mark async operation complete
                     });
                 }
-            } catch (Exception e) {
-                mainHandler.post(() -> {
-                    showError("Failed to fetch coordinates: " + e.getMessage());
-                    AppIdlingResource.decrement(); // Mark async operation complete
-                });
-            }
         }).start();
     }
 

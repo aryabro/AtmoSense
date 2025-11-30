@@ -464,36 +464,6 @@ public class WeatherActivityTest {
     }
 
     /**
-     * Verify WeatherActivity can resolve a city solely by database ID and populate
-     * UI
-     * before network data returns.
-     */
-    @Test
-    public void testWeatherActivityLoadsCityFromDatabaseById() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-        intent.putExtra("cityId", 1); // Chicago inserted during setUp()
-
-        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
-
-        // Wait for the DB lookup to finish and UI to update
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        onView(withId(R.id.weatherCityTitle))
-                .check(matches(isDisplayed()))
-                .check(matches(withText("Chicago")));
-
-        onView(withId(R.id.weatherDateTime))
-                .check(matches(isDisplayed()))
-                .check(matches(not(withText("Loading..."))));
-
-        scenario.close();
-    }
-
-    /**
      * Verify WeatherActivity surfaces errors when coordinates cannot be fetched.
      */
     @Test
@@ -598,71 +568,6 @@ public class WeatherActivityTest {
                 hasExtra("windSpeed", 3.2),
                 hasExtra("windDeg", 180.0),
                 hasExtra("username", "testUser")));
-
-        scenario.close();
-    }
-
-    /**
-     * Test fetchCityFromDatabaseById with non-existent ID
-     * Covers lambda$fetchCityFromDatabaseById$1 (city == null path)
-     */
-    @Test
-    public void testFetchCityFromDatabaseByIdNotFound() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-        intent.putExtra("cityId", 99999); // Non-existent ID
-
-        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
-
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        onView(withId(R.id.weatherError))
-                .check(matches(isDisplayed()))
-                .check(matches(withText("City not found in database with ID: 99999")));
-
-        onView(withId(R.id.weatherTemperature))
-                .check(matches(withText("Error")));
-
-        scenario.close();
-    }
-
-    /**
-     * Test fetchCityFromDatabaseById with city having zero coordinates
-     * Covers lambda$fetchCityFromDatabaseById$3 else branch (coordinates == 0.0)
-     */
-    @Test
-    public void testFetchCityFromDatabaseByIdZeroCoordinates() {
-        // Insert a city with zero coordinates
-        City cityZeroCoords = new City("ZeroCoords", 0.0, 0.0, "United States", "US", "USA", "State", 3);
-        cityDao.insertAll(Arrays.asList(cityZeroCoords));
-
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-        intent.putExtra("cityId", 3);
-
-        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
-
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        onView(withId(R.id.weatherError))
-                .check(matches(isDisplayed()))
-                .check(matches(withText("Coordinates not found for ZeroCoords")));
-
-        onView(withId(R.id.weatherTemperature))
-                .check(matches(withText("Error")));
-
-        // Cleanup
-        try {
-            cityDao.deleteById(3);
-        } catch (Exception e) {
-            // Ignore
-        }
 
         scenario.close();
     }
@@ -1354,5 +1259,101 @@ public class WeatherActivityTest {
 
         scenario.close();
     }
+
+    /**
+     * Verify WeatherActivity can resolve a city solely by database ID and populate
+     * UI
+     * before network data returns.
+     */
+        @Test
+        public void testWeatherActivityLoadsCityFromDatabaseById() {
+            Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+            intent.putExtra("cityId", 1); // Chicago inserted during setUp()
+    
+            ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+    
+            // Wait for the DB lookup to finish and UI to update
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+    
+            onView(withId(R.id.weatherCityTitle))
+                    .check(matches(isDisplayed()))
+                    .check(matches(withText("Chicago")));
+    
+            onView(withId(R.id.weatherDateTime))
+                    .check(matches(isDisplayed()))
+                    .check(matches(not(withText("Loading..."))));
+    
+            scenario.close();
+        }
+    
+    /**
+     * Test fetchCityFromDatabaseById with non-existent ID
+     * Covers lambda$fetchCityFromDatabaseById$1 (city == null path)
+     */
+    @Test
+    public void testFetchCityFromDatabaseByIdNotFound() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("cityId", 99999); // Non-existent ID
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherError))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("City not found in database with ID: 99999")));
+
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(withText("Error")));
+
+        scenario.close();
+    }
+
+    /**
+     * Test fetchCityFromDatabaseById with city having zero coordinates
+     * Covers lambda$fetchCityFromDatabaseById$3 else branch (coordinates == 0.0)
+     */
+    @Test
+    public void testFetchCityFromDatabaseByIdZeroCoordinates() {
+        // Insert a city with zero coordinates
+        City cityZeroCoords = new City("ZeroCoords", 0.0, 0.0, "United States", "US", "USA", "State", 3);
+        cityDao.insertAll(Arrays.asList(cityZeroCoords));
+
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("cityId", 3);
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.weatherError))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("Coordinates not found for ZeroCoords")));
+
+        onView(withId(R.id.weatherTemperature))
+                .check(matches(withText("Error")));
+
+        // Cleanup
+        try {
+            cityDao.deleteById(3);
+        } catch (Exception e) {
+            // Ignore
+        }
+
+        scenario.close();
+    }
+
 
 }
