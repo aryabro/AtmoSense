@@ -160,39 +160,40 @@ Meeting notes: Everyone finished up their part to Iteration 3 of the Android Pro
 
 <b>Project Week 7</b>
 </br>
-Members present: List the NetID of the people who attended the meeting
+Members present: zhenbi2, nk46, sabelle2, diveya2, nasare2, satejrs2, yuangc3
 </br>
-Meeting notes: Explain the overall team progress and a summary of discussion
+Meeting notes: Wrapped up Iteration 4 for the Android app (weather page, insights, map screen, and Weather-Aware City View), standardized the UI, and discussed API quota issues for city-view image generation. For the 4-credit LLM agent project, we reviewed evaluation results and discussed ways to improve them using the currently implemented tools.
 </br>
-| NetID          | Progress from last week         | Tasks for next week   |
-| ---------------| --------------------------------| ----------------------|
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
+| NetID          | Progress from last week                                                                 | Tasks for next week                                                    |
+| ---------------| ----------------------------------------------------------------------------------------| -----------------------------------------------------------------------|
+| zhenbi2        | Weather page implemented                                                                 | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results.   |
+| aaroncl2       | Finished and merged map screen updates                                                  | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results.             |
+| sabelle2       | Standardized UI across Android activities                                               | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results. |
+| diveya2        | Finished and merged map screen updates                                                  | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results.           |
+| nasare2        | Finished and merged Weather Insights feature                                            | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results.            |
+| satejrs2       | Finished Weather Aware city view feature                                                 | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results. |
+| yuangc3        | Finished Weather Aware city view feature                                                | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results.   |
+| nk46           | Finished and merged Weather Insights feature                                            | Record the demo, wait for next tasks of Iteration 5 and work on improving SWEAgent results.             |
 </br>
 
 
 <b>Project Week 8</b>
 </br>
-Members present: List the NetID of the people who attended the meeting
+Members present: zhenbi2, nk46, sabelle2, diveya2, nasare2, satejrs2, yuangc3
 </br>
-Meeting notes: Explain the overall team progress and a summary of discussion
+Meeting notes:Everyone finished up their part to Iteration 4 of the Android Project and performed some testing for the 4 Credit Project. 
+We distributed our work individually. Hope we can have a great Thanksgiving! 
 </br>
 | NetID          | Progress from last week         | Tasks for next week   |
 | ---------------| --------------------------------| ----------------------|
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
-|                |                                 |                       |
+|  zhenbi2              |      Finishing recording the Demo                           | Working on Testing the weather feature                       |
+|  aaroncl2              |   Finishing recording the Demo                              | Working on Testing the location feature                       |
+|   sabelle2             |   Finishing recording the Demo                              | Working on Testing the removal of an existing city                      |
+|  diveya2              |    Finishing recording the Demo                             |  Working on Mocking location test                     |
+|   nasare2             |   Finishing recording the Demo                             |   Working on  Testing the “Weather Insight” feature                   |
+|   satejrs2             |  Finishing recording the Demo                               |  Working on Testing user login with LLM-generated tests and log-off                   |
+|   yuangc3             |   Finishing recording the Demo                              |   Working on Testing the addition of a new city                   |
+|  nk46              |     Finishing recording the Demo                            |    Working on Testing user sign-up with LLM-generated tests                  |
 </br>
 
 
