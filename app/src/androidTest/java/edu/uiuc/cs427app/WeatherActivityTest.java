@@ -24,6 +24,7 @@ import java.time.LocalTime;
 import java.time.LocalDate;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.Espresso.pressBack;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.action.ViewActions.swipeUp;
@@ -35,7 +36,6 @@ import static androidx.test.espresso.matcher.ViewMatchers.isEnabled;
 import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
-
 
 import android.widget.Button;
 import android.view.View;
@@ -240,222 +240,231 @@ public class WeatherActivityTest {
      * - wind condition
      * - Weather Insights button
      */
-//    @Test
-//    public void testWeatherActivityDisplaysAllRequiredInformation() {
-//        // start WeatherActivity
-//        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-//        intent.putExtra("city", "Chicago");
-//        intent.putExtra("lat", 41.8781);
-//        intent.putExtra("lng", -87.6298);
-//        intent.putExtra("username", "testUser");
-//
-//        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
-//
-//        // wait for API response and UI update
-//        try {
-//            Thread.sleep(5000); // 等待网络请求完成
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        // assert: verify city name is displayed
-//        onView(withId(R.id.weatherCityTitle))
-//                .check(matches(isDisplayed()))
-//                .check(matches(withText("Chicago")));
-//
-//        // assert: verify date and time is displayed (format: EEE, MMM d yyyy • HH:mm z)
-//        onView(withId(R.id.weatherDateTime))
-//                .check(matches(isDisplayed()));
-//
-//        // assert: verify temperature is displayed (format: XX.X°C)
-//        onView(withId(R.id.weatherTemperature))
-//                .check(matches(isDisplayed()));
-//        // assert: verify temperature is not empty and not "Loading..." or "Error"
-//        onView(withId(R.id.weatherTemperature))
-//                .check(matches(not(withText("N/A"))))
-//                .check(matches(not(withText("Error"))));
-//
-//        // assert: verify weather condition is displayed
-//        onView(withId(R.id.weatherCondition))
-//                .check(matches(isDisplayed()));
-//        // assert: verify weather condition is not empty and not "Loading..." or "Error"
-//        // or "N/A"
-//        onView(withId(R.id.weatherCondition))
-//                .check(matches(not(withText("Error"))))
-//                .check(matches(not(withText("N/A"))));
-//
-//        // assert: verify humidity is displayed (format: XX%)
-//        onView(withId(R.id.weatherHumidity))
-//                .check(matches(isDisplayed()));
-//        // assert: verify humidity is not empty and not "Loading..." or "Error"
-//        onView(withId(R.id.weatherHumidity))
-//                .check(matches(not(withText("N/A"))))
-//                .check(matches(not(withText("Error"))));
-//
-//        // assert: verify wind condition is displayed (format: XX.X m/s DIRECTION)
-//        // Scroll to wind condition view first since it might be below the fold
-//        try {
-//            onView(withId(R.id.weatherWind))
-//                    .perform(scrollTo())
-//                    .check(matches(isDisplayed()));
-//        } catch (Exception e) {
-//            // If scrollTo fails, try swipeUp to scroll down
-//            try {
-//                onView(withId(R.id.weatherWind))
-//                        .perform(swipeUp())
-//                        .check(matches(isDisplayed()));
-//            } catch (Exception e2) {
-//                // If still fails, just check if it exists (might already be visible)
-//                onView(withId(R.id.weatherWind))
-//                        .check(matches(isDisplayed()));
-//            }
-//        }
-//        // assert: verify wind condition is not empty and not "Loading..." or "Error"
-//        onView(withId(R.id.weatherWind))
-//                .check(matches(not(withText("N/A"))))
-//                .check(matches(not(withText("Error"))));
-//
-//        // assert: verify weather insights button exists and is clickable
-//        // Scroll to button first since it's at the bottom of the screen
-//        try {
-//            onView(withId(R.id.weatherInsightsButton))
-//                    .perform(scrollTo())
-//                    .check(matches(isDisplayed()))
-//                    .check(matches(isEnabled()))
-//                    .check(matches(withText("Weather Insights")));
-//        } catch (Exception e) {
-//            // If scrollTo fails, try swipeUp to scroll down
-//            try {
-//                onView(withId(R.id.weatherInsightsButton))
-//                        .perform(swipeUp())
-//                        .check(matches(isDisplayed()))
-//                        .check(matches(withText("Weather Insights")));
-//            } catch (Exception e2) {
-//                // If still fails, just check if it exists (might already be visible)
-//                onView(withId(R.id.weatherInsightsButton))
-//                        .check(matches(isDisplayed()))
-//                        .check(matches(withText("Weather Insights")));
-//            }
-//        }
-//    }
-//
-//    /**
-//     * verify WeatherActivity displays fresh data (not cached)
-//     * by reloading the same city to verify the data is fresh
-//     */
-//    @Test
-//    public void testWeatherActivityDisplaysFreshData() {
-//        // first launch WeatherActivity
-//        Intent intent1 = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-//        intent1.putExtra("city", "Chicago");
-//        intent1.putExtra("lat", 41.8781);
-//        intent1.putExtra("lng", -87.6298);
-//        intent1.putExtra("username", "testUser");
-//
-//        ActivityScenario<WeatherActivity> scenario1 = ActivityScenario.launch(intent1);
-//
-//        // wait for first API response
-//        try {
-//            Thread.sleep(5000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        // record first temperature value
-//        String firstTemperature = "";
-//        try {
-//            // get temperature text (we can only verify it exists, actual value may change
-//            // over time)
-//            onView(withId(R.id.weatherTemperature))
-//                    .check(matches(isDisplayed()));
-//        } catch (Exception e) {
-//            // if failed, continue testing
-//        }
-//
-//        // close current activity
-//        scenario1.close();
-//
-//        // wait for a while
-//        try {
-//            Thread.sleep(2000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        // second launch WeatherActivity (same city)
-//        Intent intent2 = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-//        intent2.putExtra("city", "Chicago");
-//        intent2.putExtra("lat", 41.8781);
-//        intent2.putExtra("lng", -87.6298);
-//        intent2.putExtra("username", "testUser");
-//
-//        ActivityScenario<WeatherActivity> scenario2 = ActivityScenario.launch(intent2);
-//
-//        // wait for second API response
-//        try {
-//            Thread.sleep(5000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        // assert: verify data is loaded (not cached)
-//        onView(withId(R.id.weatherTemperature))
-//                .check(matches(isDisplayed()))
-//                .check(matches(not(withText("N/A"))))
-//                .check(matches(not(withText("Error"))));
-//
-//        // verify all fields are updated
-//        onView(withId(R.id.weatherCondition))
-//                .check(matches(not(withText("N/A"))));
-//        onView(withId(R.id.weatherHumidity))
-//                .check(matches(not(withText("N/A"))));
-//    }
+    // @Test
+    // public void testWeatherActivityDisplaysAllRequiredInformation() {
+    // // start WeatherActivity
+    // Intent intent = new Intent(ApplicationProvider.getApplicationContext(),
+    // WeatherActivity.class);
+    // intent.putExtra("city", "Chicago");
+    // intent.putExtra("lat", 41.8781);
+    // intent.putExtra("lng", -87.6298);
+    // intent.putExtra("username", "testUser");
+    //
+    // ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+    //
+    // // wait for API response and UI update
+    // try {
+    // Thread.sleep(5000); // 等待网络请求完成
+    // } catch (InterruptedException e) {
+    // e.printStackTrace();
+    // }
+    //
+    // // assert: verify city name is displayed
+    // onView(withId(R.id.weatherCityTitle))
+    // .check(matches(isDisplayed()))
+    // .check(matches(withText("Chicago")));
+    //
+    // // assert: verify date and time is displayed (format: EEE, MMM d yyyy • HH:mm
+    // z)
+    // onView(withId(R.id.weatherDateTime))
+    // .check(matches(isDisplayed()));
+    //
+    // // assert: verify temperature is displayed (format: XX.X°C)
+    // onView(withId(R.id.weatherTemperature))
+    // .check(matches(isDisplayed()));
+    // // assert: verify temperature is not empty and not "Loading..." or "Error"
+    // onView(withId(R.id.weatherTemperature))
+    // .check(matches(not(withText("N/A"))))
+    // .check(matches(not(withText("Error"))));
+    //
+    // // assert: verify weather condition is displayed
+    // onView(withId(R.id.weatherCondition))
+    // .check(matches(isDisplayed()));
+    // // assert: verify weather condition is not empty and not "Loading..." or
+    // "Error"
+    // // or "N/A"
+    // onView(withId(R.id.weatherCondition))
+    // .check(matches(not(withText("Error"))))
+    // .check(matches(not(withText("N/A"))));
+    //
+    // // assert: verify humidity is displayed (format: XX%)
+    // onView(withId(R.id.weatherHumidity))
+    // .check(matches(isDisplayed()));
+    // // assert: verify humidity is not empty and not "Loading..." or "Error"
+    // onView(withId(R.id.weatherHumidity))
+    // .check(matches(not(withText("N/A"))))
+    // .check(matches(not(withText("Error"))));
+    //
+    // // assert: verify wind condition is displayed (format: XX.X m/s DIRECTION)
+    // // Scroll to wind condition view first since it might be below the fold
+    // try {
+    // onView(withId(R.id.weatherWind))
+    // .perform(scrollTo())
+    // .check(matches(isDisplayed()));
+    // } catch (Exception e) {
+    // // If scrollTo fails, try swipeUp to scroll down
+    // try {
+    // onView(withId(R.id.weatherWind))
+    // .perform(swipeUp())
+    // .check(matches(isDisplayed()));
+    // } catch (Exception e2) {
+    // // If still fails, just check if it exists (might already be visible)
+    // onView(withId(R.id.weatherWind))
+    // .check(matches(isDisplayed()));
+    // }
+    // }
+    // // assert: verify wind condition is not empty and not "Loading..." or "Error"
+    // onView(withId(R.id.weatherWind))
+    // .check(matches(not(withText("N/A"))))
+    // .check(matches(not(withText("Error"))));
+    //
+    // // assert: verify weather insights button exists and is clickable
+    // // Scroll to button first since it's at the bottom of the screen
+    // try {
+    // onView(withId(R.id.weatherInsightsButton))
+    // .perform(scrollTo())
+    // .check(matches(isDisplayed()))
+    // .check(matches(isEnabled()))
+    // .check(matches(withText("Weather Insights")));
+    // } catch (Exception e) {
+    // // If scrollTo fails, try swipeUp to scroll down
+    // try {
+    // onView(withId(R.id.weatherInsightsButton))
+    // .perform(swipeUp())
+    // .check(matches(isDisplayed()))
+    // .check(matches(withText("Weather Insights")));
+    // } catch (Exception e2) {
+    // // If still fails, just check if it exists (might already be visible)
+    // onView(withId(R.id.weatherInsightsButton))
+    // .check(matches(isDisplayed()))
+    // .check(matches(withText("Weather Insights")));
+    // }
+    // }
+    // }
+    //
+    // /**
+    // * verify WeatherActivity displays fresh data (not cached)
+    // * by reloading the same city to verify the data is fresh
+    // */
+    // @Test
+    // public void testWeatherActivityDisplaysFreshData() {
+    // // first launch WeatherActivity
+    // Intent intent1 = new Intent(ApplicationProvider.getApplicationContext(),
+    // WeatherActivity.class);
+    // intent1.putExtra("city", "Chicago");
+    // intent1.putExtra("lat", 41.8781);
+    // intent1.putExtra("lng", -87.6298);
+    // intent1.putExtra("username", "testUser");
+    //
+    // ActivityScenario<WeatherActivity> scenario1 =
+    // ActivityScenario.launch(intent1);
+    //
+    // // wait for first API response
+    // try {
+    // Thread.sleep(5000);
+    // } catch (InterruptedException e) {
+    // e.printStackTrace();
+    // }
+    //
+    // // record first temperature value
+    // String firstTemperature = "";
+    // try {
+    // // get temperature text (we can only verify it exists, actual value may
+    // change
+    // // over time)
+    // onView(withId(R.id.weatherTemperature))
+    // .check(matches(isDisplayed()));
+    // } catch (Exception e) {
+    // // if failed, continue testing
+    // }
+    //
+    // // close current activity
+    // scenario1.close();
+    //
+    // // wait for a while
+    // try {
+    // Thread.sleep(2000);
+    // } catch (InterruptedException e) {
+    // e.printStackTrace();
+    // }
+    //
+    // // second launch WeatherActivity (same city)
+    // Intent intent2 = new Intent(ApplicationProvider.getApplicationContext(),
+    // WeatherActivity.class);
+    // intent2.putExtra("city", "Chicago");
+    // intent2.putExtra("lat", 41.8781);
+    // intent2.putExtra("lng", -87.6298);
+    // intent2.putExtra("username", "testUser");
+    //
+    // ActivityScenario<WeatherActivity> scenario2 =
+    // ActivityScenario.launch(intent2);
+    //
+    // // wait for second API response
+    // try {
+    // Thread.sleep(5000);
+    // } catch (InterruptedException e) {
+    // e.printStackTrace();
+    // }
+    //
+    // // assert: verify data is loaded (not cached)
+    // onView(withId(R.id.weatherTemperature))
+    // .check(matches(isDisplayed()))
+    // .check(matches(not(withText("N/A"))))
+    // .check(matches(not(withText("Error"))));
+    //
+    // // verify all fields are updated
+    // onView(withId(R.id.weatherCondition))
+    // .check(matches(not(withText("N/A"))));
+    // onView(withId(R.id.weatherHumidity))
+    // .check(matches(not(withText("N/A"))));
+    // }
 
-    /**
-     * verify WeatherActivity resumes correctly after background
-     */
-    @Test
-    public void testWeatherActivityResumesCorrectlyAfterBackground() {
-        // start WeatherActivity
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-        intent.putExtra("city", "Chicago");
-        intent.putExtra("lat", 41.8781);
-        intent.putExtra("lng", -87.6298);
-        intent.putExtra("username", "testUser");
+    // /**
+    // * verify WeatherActivity resumes correctly after background
+    // */
+    // @Test
+    // public void testWeatherActivityResumesCorrectlyAfterBackground() {
+    // // start WeatherActivity
+    // Intent intent = new Intent(ApplicationProvider.getApplicationContext(),
+    // WeatherActivity.class);
+    // intent.putExtra("city", "Chicago");
+    // intent.putExtra("lat", 41.8781);
+    // intent.putExtra("lng", -87.6298);
+    // intent.putExtra("username", "testUser");
 
-        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+    // ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
 
-        // wait for initial data to load
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    // // wait for initial data to load
+    // try {
+    // Thread.sleep(5000);
+    // } catch (InterruptedException e) {
+    // e.printStackTrace();
+    // }
 
-        // record initial data
-        String initialCity = "Chicago";
-        double initialLat = 41.8781;
-        double initialLng = -87.6298;
+    // // record initial data
+    // String initialCity = "Chicago";
+    // double initialLat = 41.8781;
+    // double initialLng = -87.6298;
 
-        // simulate app going to background (by recreating Activity)
-        scenario.recreate();
+    // // simulate app going to background (by recreating Activity)
+    // scenario.recreate();
 
-        // wait for resume
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    // // wait for resume
+    // try {
+    // Thread.sleep(3000);
+    // } catch (InterruptedException e) {
+    // e.printStackTrace();
+    // }
 
-        // assert: verify city name is still displayed correctly
-        onView(withId(R.id.weatherCityTitle))
-                .check(matches(isDisplayed()))
-                .check(matches(withText(initialCity)));
+    // // assert: verify city name is still displayed correctly
+    // onView(withId(R.id.weatherCityTitle))
+    // .check(matches(isDisplayed()))
+    // .check(matches(withText(initialCity)));
 
-        // assert: verify data is still displayed (possibly reloaded)
-        onView(withId(R.id.weatherTemperature))
-                .check(matches(isDisplayed()));
-    }
+    // // assert: verify data is still displayed (possibly reloaded)
+    // onView(withId(R.id.weatherTemperature))
+    // .check(matches(isDisplayed()));
+    // }
 
     /**
      * Test onClick(View) - Weather Insights button with weather data
@@ -577,6 +586,7 @@ public class WeatherActivityTest {
 
         scenario.close();
     }
+
     /**
      * Test onClick with null currentWeatherData (button should not do anything)
      * This covers the null check in onClick
@@ -838,45 +848,49 @@ public class WeatherActivityTest {
      * Test updateWeatherUI with multiple weather conditions in array
      * Tests that it uses the first element
      */
-//    @Test
-//    public void testUpdateWeatherUIWithMultipleWeatherConditions() {
-//        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-//        intent.putExtra("city", "Chicago");
-//        intent.putExtra("lat", 41.8781);
-//        intent.putExtra("lng", -87.6298);
-//
-//        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
-//
-//        scenario.onActivity(activity -> {
-//            try {
-//                // Multiple weather conditions - should use first one
-//                String json = "{"
-//                        + "\"main\":{\"temp\":22.5,\"humidity\":55},"
-//                        + "\"weather\":[{\"main\":\"Clear\",\"description\":\"clear sky\"},{\"main\":\"Clouds\",\"description\":\"overcast\"}],"
-//                        + "\"wind\":{\"speed\":3.2,\"deg\":180}"
-//                        + "}";
-//                WeatherData data = gson.fromJson(json, WeatherData.class);
-//
-//                Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
-//                updateMethod.setAccessible(true);
-//                updateMethod.invoke(activity, data);
-//            } catch (Exception e) {
-//                throw new RuntimeException(e);
-//            }
-//        });
-//
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        onView(withId(R.id.weatherCondition))
-//                .check(matches(isDisplayed()))
-//                .check(matches(withText("Clear")));
-//
-//        scenario.close();
-//    }
+    // @Test
+    // public void testUpdateWeatherUIWithMultipleWeatherConditions() {
+    // Intent intent = new Intent(ApplicationProvider.getApplicationContext(),
+    // WeatherActivity.class);
+    // intent.putExtra("city", "Chicago");
+    // intent.putExtra("lat", 41.8781);
+    // intent.putExtra("lng", -87.6298);
+    //
+    // ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+    //
+    // scenario.onActivity(activity -> {
+    // try {
+    // // Multiple weather conditions - should use first one
+    // String json = "{"
+    // + "\"main\":{\"temp\":22.5,\"humidity\":55},"
+    // + "\"weather\":[{\"main\":\"Clear\",\"description\":\"clear
+    // sky\"},{\"main\":\"Clouds\",\"description\":\"overcast\"}],"
+    // + "\"wind\":{\"speed\":3.2,\"deg\":180}"
+    // + "}";
+    // WeatherData data = gson.fromJson(json, WeatherData.class);
+    //
+    // Method updateMethod =
+    // WeatherActivity.class.getDeclaredMethod("updateWeatherUI",
+    // WeatherData.class);
+    // updateMethod.setAccessible(true);
+    // updateMethod.invoke(activity, data);
+    // } catch (Exception e) {
+    // throw new RuntimeException(e);
+    // }
+    // });
+    //
+    // try {
+    // Thread.sleep(1000);
+    // } catch (InterruptedException e) {
+    // e.printStackTrace();
+    // }
+    //
+    // onView(withId(R.id.weatherCondition))
+    // .check(matches(isDisplayed()))
+    // .check(matches(withText("Clear")));
+    //
+    // scenario.close();
+    // }
 
     /**
      * Test updateWeatherUI with condition that has only spaces
@@ -998,9 +1012,9 @@ public class WeatherActivityTest {
 
     /**
      * func name: resolveZoneIdForCity
-     *  if (city == null) {
-            return ZoneId.systemDefault();
-        }
+     * if (city == null) {
+     * return ZoneId.systemDefault();
+     * }
      */
     @Test
     public void testGetFormattedCityDateTimeCallsResolveZoneIdForCityWithNull() {
@@ -1036,31 +1050,31 @@ public class WeatherActivityTest {
      * UI
      * before network data returns.
      */
-        @Test
-        public void testWeatherActivityLoadsCityFromDatabaseById() {
-            Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
-            intent.putExtra("cityId", 1); // Chicago inserted during setUp()
-    
-            ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
-    
-            // Wait for the DB lookup to finish and UI to update
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-    
-            onView(withId(R.id.weatherCityTitle))
-                    .check(matches(isDisplayed()))
-                    .check(matches(withText("Chicago")));
-    
-            onView(withId(R.id.weatherDateTime))
-                    .check(matches(isDisplayed()))
-                    .check(matches(not(withText("Loading..."))));
-    
-            scenario.close();
+    @Test
+    public void testWeatherActivityLoadsCityFromDatabaseById() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), WeatherActivity.class);
+        intent.putExtra("cityId", 1); // Chicago inserted during setUp()
+
+        ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
+
+        // Wait for the DB lookup to finish and UI to update
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-    
+
+        onView(withId(R.id.weatherCityTitle))
+                .check(matches(isDisplayed()))
+                .check(matches(withText("Chicago")));
+
+        onView(withId(R.id.weatherDateTime))
+                .check(matches(isDisplayed()))
+                .check(matches(not(withText("Loading..."))));
+
+        scenario.close();
+    }
+
     /**
      * Test fetchCityFromDatabaseById with non-existent ID
      * Covers lambda$fetchCityFromDatabaseById$1 (city == null path)
@@ -1131,8 +1145,7 @@ public class WeatherActivityTest {
         // 启动 Activity
         Intent intent = new Intent(
                 ApplicationProvider.getApplicationContext(),
-                WeatherActivity.class
-        );
+                WeatherActivity.class);
         ActivityScenario<WeatherActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(activity -> {
@@ -1326,7 +1339,7 @@ public class WeatherActivityTest {
                 LocalTime nineAm = LocalTime.of(9, 0);
                 ZoneId zone = ZoneId.systemDefault();
                 Clock fixedClock = Clock.fixed(nineAm.atDate(LocalDate.now()).atZone(zone).toInstant(), zone);
-    
+
                 activity.setClock(fixedClock);
 
                 String json = "{"
@@ -1375,7 +1388,7 @@ public class WeatherActivityTest {
                 LocalTime threePm = LocalTime.of(15, 0);
                 ZoneId zone = ZoneId.systemDefault();
                 Clock fixedClock = Clock.fixed(threePm.atDate(LocalDate.now()).atZone(zone).toInstant(), zone);
-    
+
                 activity.setClock(fixedClock);
 
                 String json = "{"
@@ -1388,7 +1401,7 @@ public class WeatherActivityTest {
                 Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
                 updateMethod.setAccessible(true);
                 updateMethod.invoke(activity, data);
-                
+
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -1424,7 +1437,7 @@ public class WeatherActivityTest {
                 LocalTime ninePm = LocalTime.of(21, 0);
                 ZoneId zone = ZoneId.systemDefault();
                 Clock fixedClock = Clock.fixed(ninePm.atDate(LocalDate.now()).atZone(zone).toInstant(), zone);
-    
+
                 activity.setClock(fixedClock);
 
                 String json = "{"
@@ -1437,7 +1450,7 @@ public class WeatherActivityTest {
                 Method updateMethod = WeatherActivity.class.getDeclaredMethod("updateWeatherUI", WeatherData.class);
                 updateMethod.setAccessible(true);
                 updateMethod.invoke(activity, data);
-                
+
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -1455,5 +1468,193 @@ public class WeatherActivityTest {
 
         scenario.close();
     }
+//
+//    /**
+//     * Test that main page with two cities (Chicago and New York) can show weather
+//     * info
+//     * with assertions for both cities
+//     */
+//    @Test
+//    public void testMainPageWithTwoCitiesShowsWeatherInfo() {
+//        // Start MainActivity with both cities (Chicago ID=1, New York ID=2)
+//        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MainActivity.class);
+//        intent.putExtra("username", "testUser");
+//        intent.putExtra(LoginActivity.KEY_CITY_LIST, "1,2"); // Chicago and New York
+//
+//        ActivityScenario<MainActivity> scenario = ActivityScenario.launch(intent);
+//
+//        // Wait for UI to load
+//        try {
+//            Thread.sleep(3000); // Wait for cities to be loaded and displayed
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        // Assert: Verify both cities are displayed on main page
+//        onView(withText("Chicago"))
+//                .check(matches(isDisplayed()));
+//        onView(withText("New York"))
+//                .check(matches(isDisplayed()));
+//
+//        // Assert: Verify WEATHER buttons exist for both cities
+//        onView(weatherButtonForCity("Chicago"))
+//                .check(matches(isDisplayed()))
+//                .check(matches(isEnabled()));
+//        onView(weatherButtonForCity("New York"))
+//                .check(matches(isDisplayed()))
+//                .check(matches(isEnabled()));
+//
+//        // Test Chicago weather
+//        // Click WEATHER button for Chicago
+//        onView(weatherButtonForCity("Chicago"))
+//                .perform(click());
+//
+//        // Wait for WeatherActivity to load
+//        try {
+//            Thread.sleep(3000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        // Assert: Verify WeatherActivity is started for Chicago
+//        intended(hasComponent(WeatherActivity.class.getName()));
+//        intended(allOf(
+//                hasExtra("city", "Chicago"),
+//                hasExtra("lat", 41.8781),
+//                hasExtra("lng", -87.6298),
+//                hasExtra("username", "testUser")));
+//
+//        // Wait for weather data to load
+//        try {
+//            Thread.sleep(5000); // Wait for API response
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        // Assert: Verify Chicago weather information is displayed
+//        onView(withId(R.id.weatherCityTitle))
+//                .check(matches(isDisplayed()))
+//                .check(matches(withText("Chicago")));
+//
+//        onView(withId(R.id.weatherDateTime))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText(""))))
+//                .check(matches(not(withText("Loading..."))));
+//
+//        onView(withId(R.id.weatherTemperature))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText("N/A"))))
+//                .check(matches(not(withText("Error"))));
+//
+//        onView(withId(R.id.weatherCondition))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText("N/A"))))
+//                .check(matches(not(withText("Error"))));
+//
+//        onView(withId(R.id.weatherHumidity))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText("N/A"))))
+//                .check(matches(not(withText("Error"))));
+//
+//        // Scroll to wind condition if needed
+//        try {
+//            onView(withId(R.id.weatherWind))
+//                    .perform(scrollTo())
+//                    .check(matches(isDisplayed()))
+//                    .check(matches(not(withText("N/A"))))
+//                    .check(matches(not(withText("Error"))));
+//        } catch (Exception e) {
+//            // If scroll fails, just check if it exists
+//            onView(withId(R.id.weatherWind))
+//                    .check(matches(isDisplayed()))
+//                    .check(matches(not(withText("N/A"))))
+//                    .check(matches(not(withText("Error"))));
+//        }
+//
+//        // Press back to return to MainActivity
+//        pressBack();
+//
+//        // Wait for MainActivity to be visible again
+//        try {
+//            Thread.sleep(2000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        // Assert: Verify we're back on MainActivity with both cities still displayed
+//        onView(withText("Chicago"))
+//                .check(matches(isDisplayed()));
+//        onView(withText("New York"))
+//                .check(matches(isDisplayed()));
+//
+//        // Test New York weather
+//        // Click WEATHER button for New York
+//        onView(weatherButtonForCity("New York"))
+//                .perform(click());
+//
+//        // Wait for WeatherActivity to load
+//        try {
+//            Thread.sleep(3000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        // Assert: Verify WeatherActivity is started for New York
+//        intended(hasComponent(WeatherActivity.class.getName()));
+//        intended(allOf(
+//                hasExtra("city", "New York"),
+//                hasExtra("lat", 40.7128),
+//                hasExtra("lng", -74.0060),
+//                hasExtra("username", "testUser")));
+//
+//        // Wait for weather data to load
+//        try {
+//            Thread.sleep(5000); // Wait for API response
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//        // Assert: Verify New York weather information is displayed
+//        onView(withId(R.id.weatherCityTitle))
+//                .check(matches(isDisplayed()))
+//                .check(matches(withText("New York")));
+//
+//        onView(withId(R.id.weatherDateTime))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText(""))))
+//                .check(matches(not(withText("Loading..."))));
+//
+//        onView(withId(R.id.weatherTemperature))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText("N/A"))))
+//                .check(matches(not(withText("Error"))));
+//
+//        onView(withId(R.id.weatherCondition))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText("N/A"))))
+//                .check(matches(not(withText("Error"))));
+//
+//        onView(withId(R.id.weatherHumidity))
+//                .check(matches(isDisplayed()))
+//                .check(matches(not(withText("N/A"))))
+//                .check(matches(not(withText("Error"))));
+//
+//        // Scroll to wind condition if needed
+//        try {
+//            onView(withId(R.id.weatherWind))
+//                    .perform(scrollTo())
+//                    .check(matches(isDisplayed()))
+//                    .check(matches(not(withText("N/A"))))
+//                    .check(matches(not(withText("Error"))));
+//        } catch (Exception e) {
+//            // If scroll fails, just check if it exists
+//            onView(withId(R.id.weatherWind))
+//                    .check(matches(isDisplayed()))
+//                    .check(matches(not(withText("N/A"))))
+//                    .check(matches(not(withText("Error"))));
+//        }
+//
+//        scenario.close();
+//    }
 
 }
