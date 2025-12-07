@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>City.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">edu.uiuc.cs427app</a> &gt; <span class="el_source">City.java</span></div><h1>City.java</h1><pre class="source lang-java linenums">package edu.uiuc.cs427app;
+
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
+
+@Entity(tableName = &quot;cities&quot;)
+public class City {
+    private String city;
+    private double lat;
+    private double lng;
+    private String country;
+    private String iso2;
+    private String iso3;
+    private String admin_name;
+
+    @PrimaryKey
+    private int id;
+
+    // No-argument constructor for Room.
+    @Ignore
+<span class="nc" id="L22">    public City() {</span>
+<span class="nc" id="L23">    }</span>
+
+    // Constructor to create a new City object.
+    public City(String city, double lat, double lng, String country,
+<span class="fc" id="L27">            String iso2, String iso3, String admin_name, int id) {</span>
+<span class="fc" id="L28">        this.id = id;</span>
+<span class="fc" id="L29">        this.city = city;</span>
+<span class="fc" id="L30">        this.lat = lat;</span>
+<span class="fc" id="L31">        this.lng = lng;</span>
+<span class="fc" id="L32">        this.country = country;</span>
+<span class="fc" id="L33">        this.iso2 = iso2;</span>
+<span class="fc" id="L34">        this.iso3 = iso3;</span>
+<span class="fc" id="L35">        this.admin_name = admin_name;</span>
+<span class="fc" id="L36">    }</span>
+
+    // ==============================
+    // Getters and Setters
+    // ==============================
+    // Gets the city ID.
+    public int getId() {
+<span class="fc" id="L43">        return id;</span>
+    }
+
+    // Sets the city ID.
+    public void setId(int id) {
+<span class="nc" id="L48">        this.id = id;</span>
+<span class="nc" id="L49">    }</span>
+
+    // Gets the city name.
+    public String getCity() {
+<span class="fc" id="L53">        return city;</span>
+    }
+
+    // Sets the city name.
+    public void setCity(String city) {
+<span class="nc" id="L58">        this.city = city;</span>
+<span class="nc" id="L59">    }</span>
+
+    // Gets the country name.
+    public String getCountry() {
+<span class="fc" id="L63">        return country;</span>
+    }
+
+    // Sets the country name.
+    public void setCountry(String country) {
+<span class="nc" id="L68">        this.country = country;</span>
+<span class="nc" id="L69">    }</span>
+
+    // Gets the ISO2 country code.
+    public String getIso2() {
+<span class="fc" id="L73">        return iso2;</span>
+    }
+
+    // Sets the ISO2 country code.
+    public void setIso2(String iso2) {
+<span class="nc" id="L78">        this.iso2 = iso2;</span>
+<span class="nc" id="L79">    }</span>
+
+    // Gets the ISO3 country code.
+    public String getIso3() {
+<span class="fc" id="L83">        return iso3;</span>
+    }
+
+    // Sets the ISO3 country code.
+    public void setIso3(String iso3) {
+<span class="nc" id="L88">        this.iso3 = iso3;</span>
+<span class="nc" id="L89">    }</span>
+
+    // Gets the admin name.
+    public String getAdmin_name() {
+<span class="fc" id="L93">        return admin_name;</span>
+    }
+
+    // Sets the admin name.
+    public void setAdmin_name(String admin_name) {
+<span class="nc" id="L98">        this.admin_name = admin_name;</span>
+<span class="nc" id="L99">    }</span>
+
+    // Gets the latitude.
+    public double getLat() {
+<span class="fc" id="L103">        return lat;</span>
+    }
+
+    // Sets the latitude.
+    public void setLat(double lat) {
+<span class="nc" id="L108">        this.lat = lat;</span>
+<span class="nc" id="L109">    }</span>
+
+    // Gets the longitude.
+    public double getLng() {
+<span class="fc" id="L113">        return lng;</span>
+    }
+
+    // Sets the longitude.
+    public void setLng(double lng) {
+<span class="nc" id="L118">        this.lng = lng;</span>
+<span class="nc" id="L119">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

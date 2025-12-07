@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WeatherActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">edu.uiuc.cs427app</a> &gt; <span class="el_source">WeatherActivity.java</span></div><h1>WeatherActivity.java</h1><pre class="source lang-java linenums">package edu.uiuc.cs427app;
+
+import android.widget.ImageView;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.time.Clock;
+
+import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+
+import com.google.gson.Gson;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+
+<span class="fc" id="L33">public class WeatherActivity extends BaseActivity implements View.OnClickListener {</span>
+
+    private static final String TAG = &quot;WeatherActivity&quot;;
+    private static final String NOT_AVAILABLE = &quot;N/A&quot;;
+    private static final String ERROR_TEXT = &quot;Error&quot;;
+
+    private String cityName;
+    private double cityLat;
+    private double cityLng;
+    private TextView cityTitleView;
+    private TextView dateTimeView;
+    private TextView temperatureView;
+    private TextView conditionView;
+    private TextView humidityView;
+    private TextView windView;
+    private ImageView weatherImageView;
+    private TextView errorView;
+    private Button insightsButton;
+    private OkHttpClient client;
+    private Gson gson;
+    private Handler mainHandler;
+    private WeatherData currentWeatherData;
+
+<span class="fc" id="L56">    private Clock clock = Clock.systemDefaultZone();</span>
+
+    public void setClock(Clock testClock) {
+<span class="fc" id="L59">        this.clock = testClock;</span>
+<span class="fc" id="L60">    }</span>
+
+    // creates weather activity
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L65">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L66">        setContentView(R.layout.activity_weather);</span>
+
+        // Try to get cityId first, then fall back to city name
+<span class="fc" id="L69">        int cityId = getIntent().getIntExtra(&quot;cityId&quot;, -1);</span>
+<span class="fc" id="L70">        cityName = getIntent().getStringExtra(&quot;city&quot;);</span>
+<span class="fc" id="L71">        cityLat = getIntent().getDoubleExtra(&quot;lat&quot;, 0.0);</span>
+<span class="fc" id="L72">        cityLng = getIntent().getDoubleExtra(&quot;lng&quot;, 0.0);</span>
+
+<span class="fc" id="L74">        cityTitleView = findViewById(R.id.weatherCityTitle);</span>
+<span class="fc" id="L75">        dateTimeView = findViewById(R.id.weatherDateTime);</span>
+<span class="fc" id="L76">        temperatureView = findViewById(R.id.weatherTemperature);</span>
+<span class="fc" id="L77">        conditionView = findViewById(R.id.weatherCondition);</span>
+<span class="fc" id="L78">        humidityView = findViewById(R.id.weatherHumidity);</span>
+<span class="fc" id="L79">        windView = findViewById(R.id.weatherWind);</span>
+<span class="fc" id="L80">        weatherImageView = findViewById(R.id.weatherImage);</span>
+<span class="fc" id="L81">        errorView = findViewById(R.id.weatherError);</span>
+<span class="fc" id="L82">        insightsButton = findViewById(R.id.weatherInsightsButton);</span>
+
+<span class="fc" id="L84">        client = new OkHttpClient();</span>
+<span class="fc" id="L85">        gson = new Gson();</span>
+<span class="fc" id="L86">        mainHandler = new Handler(Looper.getMainLooper());</span>
+<span class="fc" id="L87">        WeatherAwareView weatherAwareView = new WeatherAwareView(this, weatherImageView);</span>
+<span class="fc" id="L88">        insightsButton.setOnClickListener(this);</span>
+
+        // If cityId is provided, fetch city info from database
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (cityId != -1) {</span>
+<span class="fc" id="L92">            fetchCityFromDatabaseById(cityId);</span>
+<span class="pc bpc" id="L93" title="1 of 4 branches missed.">        } else if (cityLat == 0.0 &amp;&amp; cityLng == 0.0) {</span>
+            // If coordinates not provided, fetch from database by name
+<span class="fc" id="L95">            fetchCoordinatesFromDatabase();</span>
+        } else {
+            // Fetch weather data with provided coordinates
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (cityName != null) {</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                if (getSupportActionBar() != null) {</span>
+<span class="fc" id="L100">                    getSupportActionBar().setTitle(&quot;Weather - &quot; + cityName);</span>
+                }
+<span class="fc" id="L102">                cityTitleView.setText(cityName);</span>
+<span class="fc" id="L103">                dateTimeView.setText(getFormattedCityDateTime(cityName));</span>
+            }
+<span class="fc" id="L105">            fetchWeatherData();</span>
+        }
+<span class="fc" id="L107">    }</span>
+
+    // sets up weather insights
+    @Override
+    public void onClick(View v) {
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (v.getId() == R.id.weatherInsightsButton) {</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">            if (currentWeatherData != null) {</span>
+<span class="fc" id="L114">                Intent intent = new Intent(this, WeatherInsightsActivity.class);</span>
+<span class="fc" id="L115">                intent.putExtra(&quot;city&quot;, cityName);</span>
+
+                // dynamic theme support for weatherinsights
+<span class="fc" id="L118">                String username = getIntent().getStringExtra(&quot;username&quot;);</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">                if (username != null) {</span>
+<span class="fc" id="L120">                    intent.putExtra(&quot;username&quot;, username);</span>
+                }
+
+                // Pass weather data
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                if (currentWeatherData.getMain() != null) {</span>
+<span class="fc" id="L125">                    intent.putExtra(&quot;temperature&quot;, currentWeatherData.getMain().getTemp());</span>
+<span class="fc" id="L126">                    intent.putExtra(&quot;humidity&quot;, currentWeatherData.getMain().getHumidity());</span>
+                }
+<span class="pc bpc" id="L128" title="2 of 4 branches missed.">                if (currentWeatherData.getWeather() != null &amp;&amp; currentWeatherData.getWeather().length &gt; 0) {</span>
+<span class="fc" id="L129">                    intent.putExtra(&quot;condition&quot;, currentWeatherData.getWeather()[0].getDescription());</span>
+<span class="fc" id="L130">                    intent.putExtra(&quot;weatherMain&quot;, currentWeatherData.getWeather()[0].getMain());</span>
+                }
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">                if (currentWeatherData.getWind() != null) {</span>
+<span class="fc" id="L133">                    intent.putExtra(&quot;windSpeed&quot;, currentWeatherData.getWind().getSpeed());</span>
+<span class="fc" id="L134">                    intent.putExtra(&quot;windDeg&quot;, currentWeatherData.getWind().getDeg());</span>
+                }
+
+<span class="fc" id="L137">                startActivity(intent);</span>
+            }
+        }
+<span class="fc" id="L140">    }</span>
+
+    // for a given city, returns formatted time
+    private String getFormattedCityDateTime(String city) {
+<span class="fc" id="L144">        ZoneId zoneId = resolveZoneIdForCity(city);</span>
+<span class="fc" id="L145">        ZonedDateTime now = ZonedDateTime.ofInstant(Instant.now(), zoneId);</span>
+<span class="fc" id="L146">        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(&quot;EEE, MMM d yyyy • HH:mm z&quot;, Locale.getDefault());</span>
+<span class="fc" id="L147">        return now.format(fmt);</span>
+    }
+
+    private ZoneId resolveZoneIdForCity(String city) {
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (city == null) {</span>
+<span class="fc" id="L152">            return ZoneId.systemDefault();</span>
+        }
+    
+<span class="fc" id="L155">        String key = city.trim().toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L156">        String timezone = getKnownCityTimezones().get(key);</span>
+    
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        if (timezone != null) {</span>
+<span class="fc" id="L159">            return ZoneId.of(timezone);</span>
+        }
+    
+<span class="fc" id="L162">        return ZoneId.systemDefault();</span>
+    }
+    
+    // gets city timezones
+    private Map&lt;String, String&gt; getKnownCityTimezones() {
+<span class="fc" id="L167">        Map&lt;String, String&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L168">        map.put(&quot;new york&quot;, &quot;America/New_York&quot;);</span>
+<span class="fc" id="L169">        map.put(&quot;chicago&quot;, &quot;America/Chicago&quot;);</span>
+<span class="fc" id="L170">        map.put(&quot;los angeles&quot;, &quot;America/Los_Angeles&quot;);</span>
+<span class="fc" id="L171">        map.put(&quot;london&quot;, &quot;Europe/London&quot;);</span>
+<span class="fc" id="L172">        map.put(&quot;paris&quot;, &quot;Europe/Paris&quot;);</span>
+<span class="fc" id="L173">        map.put(&quot;beijing&quot;, &quot;Asia/Shanghai&quot;);</span>
+<span class="fc" id="L174">        map.put(&quot;shanghai&quot;, &quot;Asia/Shanghai&quot;);</span>
+<span class="fc" id="L175">        map.put(&quot;tokyo&quot;, &quot;Asia/Tokyo&quot;);</span>
+<span class="fc" id="L176">        map.put(&quot;sydney&quot;, &quot;Australia/Sydney&quot;);</span>
+<span class="fc" id="L177">        map.put(&quot;delhi&quot;, &quot;Asia/Kolkata&quot;);</span>
+<span class="fc" id="L178">        map.put(&quot;mumbai&quot;, &quot;Asia/Kolkata&quot;);</span>
+<span class="fc" id="L179">        map.put(&quot;singapore&quot;, &quot;Asia/Singapore&quot;);</span>
+<span class="fc" id="L180">        map.put(&quot;berlin&quot;, &quot;Europe/Berlin&quot;);</span>
+<span class="fc" id="L181">        map.put(&quot;toronto&quot;, &quot;America/Toronto&quot;);</span>
+<span class="fc" id="L182">        map.put(&quot;vancouver&quot;, &quot;America/Vancouver&quot;);</span>
+<span class="fc" id="L183">        return map;</span>
+    }
+
+    // gets city name from database (ID)
+    private void fetchCityFromDatabaseById(int cityId) {
+<span class="fc" id="L188">        AppIdlingResource.increment(); // Mark async operation start</span>
+<span class="fc" id="L189">        new Thread(() -&gt; {</span>
+<span class="fc" id="L190">                CityDao dao = DatabaseClient.getInstance(this).getAppDatabase().cityDao();</span>
+<span class="fc" id="L191">                City city = dao.findById(cityId);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                if (city != null) {</span>
+<span class="fc" id="L193">                    cityName = city.getCity();</span>
+<span class="fc" id="L194">                    cityLat = city.getLat();</span>
+<span class="fc" id="L195">                    cityLng = city.getLng();</span>
+<span class="fc" id="L196">                    mainHandler.post(() -&gt; {</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">                        if (getSupportActionBar() != null) {</span>
+<span class="fc" id="L198">                            getSupportActionBar().setTitle(&quot;Weather - &quot; + cityName);</span>
+                        }
+<span class="fc" id="L200">                        cityTitleView.setText(cityName);</span>
+<span class="fc" id="L201">                        dateTimeView.setText(getFormattedCityDateTime(cityName));</span>
+<span class="fc" id="L202">                        AppIdlingResource.decrement(); // Database query complete</span>
+<span class="pc bpc" id="L203" title="1 of 4 branches missed.">                        if (cityLat != 0.0 || cityLng != 0.0) {</span>
+<span class="fc" id="L204">                            fetchWeatherData(); // fetchWeatherData will increment its own counter</span>
+                        } else {
+<span class="fc" id="L206">                            showError(&quot;Coordinates not found for &quot; + cityName);</span>
+                        }
+<span class="fc" id="L208">                    });</span>
+                } else {
+<span class="fc" id="L210">                    mainHandler.post(() -&gt; {</span>
+<span class="fc" id="L211">                        showError(&quot;City not found in database with ID: &quot; + cityId);</span>
+<span class="fc" id="L212">                        AppIdlingResource.decrement(); // Mark async operation complete</span>
+<span class="fc" id="L213">                    });</span>
+                }
+<span class="fc" id="L215">        }).start();</span>
+<span class="fc" id="L216">    }</span>
+
+    // gets coordinates
+    private void fetchCoordinatesFromDatabase() {
+<span class="fc" id="L220">        AppIdlingResource.increment(); // Mark async operation start</span>
+<span class="fc" id="L221">        new Thread(() -&gt; {</span>
+<span class="fc" id="L222">                CityDao dao = DatabaseClient.getInstance(this).getAppDatabase().cityDao();</span>
+<span class="fc" id="L223">                List&lt;City&gt; cities = dao.findAllByName(cityName);</span>
+<span class="pc bpc" id="L224" title="1 of 4 branches missed.">                if (cities != null &amp;&amp; !cities.isEmpty()) {</span>
+<span class="fc" id="L225">                    City city = cities.get(0);</span>
+<span class="fc" id="L226">                    cityLat = city.getLat();</span>
+<span class="fc" id="L227">                    cityLng = city.getLng();</span>
+<span class="fc" id="L228">                    mainHandler.post(() -&gt; {</span>
+<span class="fc" id="L229">                        AppIdlingResource.decrement(); // Database query complete</span>
+<span class="pc bpc" id="L230" title="1 of 4 branches missed.">                        if (cityLat != 0.0 || cityLng != 0.0) {</span>
+<span class="fc" id="L231">                            fetchWeatherData(); // fetchWeatherData will increment its own counter</span>
+                        } else {
+<span class="fc" id="L233">                            showError(&quot;Coordinates not found for &quot; + cityName);</span>
+                        }
+<span class="fc" id="L235">                    });</span>
+<span class="fc" id="L236">                } else {</span>
+<span class="fc" id="L237">                    mainHandler.post(() -&gt; {</span>
+<span class="fc" id="L238">                        showError(&quot;City not found in database: &quot; + cityName);</span>
+<span class="fc" id="L239">                        AppIdlingResource.decrement(); // Mark async operation complete</span>
+<span class="fc" id="L240">                    });</span>
+                }
+<span class="fc" id="L242">        }).start();</span>
+<span class="fc" id="L243">    }</span>
+
+    // gets weather data from api
+    private void fetchWeatherData() {
+        // Get API key from local.properties via BuildConfig
+<span class="fc" id="L248">        String apiKey = BuildConfig.OPENWEATHER_API_KEY;</span>
+
+        // Remove quotes if present and trim
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">        if (apiKey != null) {</span>
+<span class="fc" id="L252">            apiKey = apiKey.replace(&quot;\&quot;&quot;, &quot;&quot;).trim();</span>
+        }
+
+<span class="fc" id="L255">        Log.d(TAG, &quot;Fetching weather for: &quot; + cityName + &quot; at (&quot; + cityLat + &quot;, &quot; + cityLng + &quot;)&quot;);</span>
+
+<span class="fc" id="L257">        AppIdlingResource.increment(); // Mark network request start</span>
+        try {
+<span class="fc" id="L259">            String url = &quot;https://api.openweathermap.org/data/2.5/weather?lat=&quot; +</span>
+                    cityLat +
+                    &quot;&amp;lon=&quot; + cityLng +
+                    &quot;&amp;appid=&quot; + apiKey +
+                    &quot;&amp;units=metric&quot;;
+
+<span class="fc" id="L265">            Log.d(TAG, &quot;Request URL: &quot; + url.replace(apiKey, &quot;API_KEY_HIDDEN&quot;));</span>
+
+<span class="fc" id="L267">            Request request = new Request.Builder()</span>
+<span class="fc" id="L268">                    .url(url)</span>
+<span class="fc" id="L269">                    .build();</span>
+
+<span class="fc" id="L271">            client.newCall(request).enqueue(new Callback() {</span>
+                @Override
+                public void onFailure(Call call, IOException e) {
+<span class="nc" id="L274">                    Log.e(TAG, &quot;Network request failed&quot;, e);</span>
+<span class="nc" id="L275">                    mainHandler.post(() -&gt; {</span>
+<span class="nc" id="L276">                        showError(&quot;Failed to fetch weather data: &quot; + e.getMessage());</span>
+<span class="nc" id="L277">                        AppIdlingResource.decrement(); // Mark network request complete</span>
+<span class="nc" id="L278">                    });</span>
+<span class="nc" id="L279">                }</span>
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+<span class="fc" id="L283">                    ResponseBody body = response.body();</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">                    if (body == null) {</span>
+<span class="nc" id="L285">                        mainHandler.post(() -&gt; {</span>
+<span class="nc" id="L286">                            showError(&quot;Empty response from server&quot;);</span>
+<span class="nc" id="L287">                            AppIdlingResource.decrement(); // Mark network request complete</span>
+<span class="nc" id="L288">                        });</span>
+<span class="nc" id="L289">                        return;</span>
+                    }
+
+<span class="fc" id="L292">                    String responseBody = body.string();</span>
+<span class="fc" id="L293">                    Log.d(TAG, &quot;Response code: &quot; + response.code());</span>
+<span class="fc" id="L294">                    Log.d(TAG, &quot;Response body: &quot; + responseBody.substring(0, Math.min(200, responseBody.length())));</span>
+
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">                    if (!response.isSuccessful()) {</span>
+<span class="nc" id="L297">                        Log.e(TAG, &quot;Unsuccessful response: &quot; + response.code() + &quot;, body: &quot; + responseBody);</span>
+<span class="nc" id="L298">                        String errorMsg = &quot;Failed to fetch weather data. Response code: &quot; + response.code() + &quot;. &quot; +</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">                                (responseBody.length() &gt; 100 ? responseBody.substring(0, 100) : responseBody);</span>
+<span class="nc" id="L300">                        mainHandler.post(() -&gt; {</span>
+<span class="nc" id="L301">                            showError(errorMsg);</span>
+<span class="nc" id="L302">                            AppIdlingResource.decrement(); // Mark network request complete</span>
+<span class="nc" id="L303">                        });</span>
+<span class="nc" id="L304">                        return;</span>
+                    }
+
+                    try {
+<span class="fc" id="L308">                        WeatherData weatherData = gson.fromJson(responseBody, WeatherData.class);</span>
+<span class="fc" id="L309">                        Log.d(TAG, &quot;Parsed weather data successfully&quot;);</span>
+<span class="fc" id="L310">                        mainHandler.post(() -&gt; {</span>
+<span class="fc" id="L311">                            updateWeatherUI(weatherData);</span>
+<span class="fc" id="L312">                            AppIdlingResource.decrement(); // Mark network request complete after UI update</span>
+<span class="fc" id="L313">                        });</span>
+<span class="nc" id="L314">                    } catch (Exception e) {</span>
+<span class="nc" id="L315">                        Log.e(TAG, &quot;Failed to parse weather data&quot;, e);</span>
+<span class="nc" id="L316">                        Log.e(TAG, &quot;Response body was: &quot; + responseBody);</span>
+<span class="nc" id="L317">                        mainHandler.post(() -&gt; {</span>
+<span class="nc" id="L318">                            showError(&quot;Failed to parse weather data: &quot; + e.getMessage());</span>
+<span class="nc" id="L319">                            AppIdlingResource.decrement(); // Mark network request complete</span>
+<span class="nc" id="L320">                        });</span>
+<span class="fc" id="L321">                    }</span>
+<span class="fc" id="L322">                }</span>
+            });
+<span class="nc" id="L324">        } catch (Exception e) {</span>
+<span class="nc" id="L325">            showError(&quot;Failed to create request: &quot; + e.getMessage());</span>
+<span class="nc" id="L326">            AppIdlingResource.decrement(); // Mark network request complete on error</span>
+<span class="fc" id="L327">        }</span>
+<span class="fc" id="L328">    }</span>
+
+    // updates weather UI
+    private void updateWeatherUI(WeatherData weatherData) {
+<span class="fc bfc" id="L332" title="All 2 branches covered.">        if (weatherData == null) {</span>
+<span class="fc" id="L333">            Log.e(TAG, &quot;WeatherData is null&quot;);</span>
+<span class="fc" id="L334">            showError(&quot;No weather data received&quot;);</span>
+<span class="fc" id="L335">            return;</span>
+        }
+
+        // Store weather data for insights
+<span class="fc" id="L339">        this.currentWeatherData = weatherData;</span>
+
+        // Enable insights button now that we have data
+<span class="fc" id="L342">        insightsButton.setEnabled(true);</span>
+
+<span class="fc" id="L344">        Log.d(TAG, &quot;Updating UI with weather data&quot;);</span>
+<span class="fc" id="L345">        errorView.setVisibility(View.GONE);</span>
+
+        // Temperature
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">        if (weatherData.getMain() != null) {</span>
+<span class="fc" id="L349">            double temp = weatherData.getMain().getTemp();</span>
+<span class="fc" id="L350">            temperatureView.setText(String.format(Locale.getDefault(), &quot;%.1f°C&quot;, temp));</span>
+<span class="fc" id="L351">        } else {</span>
+<span class="nc" id="L352">            temperatureView.setText(NOT_AVAILABLE);</span>
+        }
+
+        // Weather condition
+<span class="pc bpc" id="L356" title="2 of 4 branches missed.">        if (weatherData.getWeather() != null &amp;&amp; weatherData.getWeather().length &gt; 0) {</span>
+<span class="fc" id="L357">            String condition = weatherData.getWeather()[0].getDescription();</span>
+            // Capitalize first letter
+<span class="fc bfc" id="L359" title="All 4 branches covered.">            if (condition != null &amp;&amp; !condition.isEmpty()) {</span>
+<span class="fc" id="L360">                condition = condition.substring(0, 1).toUpperCase(Locale.getDefault()) + condition.substring(1);</span>
+            }
+<span class="fc" id="L362">            conditionView.setText(condition);</span>
+<span class="fc" id="L363">        } else {</span>
+<span class="nc" id="L364">            conditionView.setText(NOT_AVAILABLE);</span>
+        }
+
+        // Humidity
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">        if (weatherData.getMain() != null) {</span>
+<span class="fc" id="L369">            int humidity = weatherData.getMain().getHumidity();</span>
+<span class="fc" id="L370">            humidityView.setText(String.format(Locale.getDefault(), &quot;%d%%&quot;, humidity));</span>
+<span class="fc" id="L371">        } else {</span>
+<span class="nc" id="L372">            humidityView.setText(NOT_AVAILABLE);</span>
+        }
+
+        // Wind condition
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">        if (weatherData.getWind() != null) {</span>
+<span class="fc" id="L377">            double speed = weatherData.getWind().getSpeed();</span>
+<span class="fc" id="L378">            double deg = weatherData.getWind().getDeg();</span>
+<span class="fc" id="L379">            String direction = getWindDirection(deg);</span>
+<span class="fc" id="L380">            windView.setText(String.format(Locale.getDefault(), &quot;%.1f m/s %s&quot;, speed, direction));</span>
+<span class="fc" id="L381">        } else {</span>
+<span class="nc" id="L382">            windView.setText(NOT_AVAILABLE);</span>
+        }
+
+        // Generate Gemini city image once weather data is displayed
+<span class="pc bpc" id="L386" title="2 of 4 branches missed.">        if (weatherData.getWeather() != null &amp;&amp; weatherData.getWeather().length &gt; 0) {</span>
+<span class="fc" id="L387">            String condition = weatherData.getWeather()[0].getDescription();</span>
+<span class="fc bfc" id="L388" title="All 4 branches covered.">            if (condition != null &amp;&amp; !condition.isEmpty()) {</span>
+<span class="fc" id="L389">                condition = condition.substring(0, 1).toUpperCase() + condition.substring(1);</span>
+            }
+
+            // Figure out approximate time of day
+<span class="fc" id="L393">            java.time.LocalTime now = java.time.LocalTime.now(clock);</span>
+            String timeOfDay;
+<span class="fc bfc" id="L395" title="All 2 branches covered.">            if (now.isBefore(java.time.LocalTime.NOON)) {</span>
+<span class="fc" id="L396">                timeOfDay = &quot;morning&quot;;</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">            } else if (now.isBefore(java.time.LocalTime.of(18, 0))) {</span>
+<span class="fc" id="L398">                timeOfDay = &quot;afternoon&quot;;</span>
+            } else {
+<span class="fc" id="L400">                timeOfDay = &quot;evening&quot;;</span>
+            }
+
+<span class="fc" id="L403">            WeatherAwareView weatherAwareView = new WeatherAwareView(this, weatherImageView);</span>
+<span class="fc" id="L404">            weatherAwareView.generateCityImage(cityName, condition, timeOfDay);</span>
+        }
+<span class="fc" id="L406">    }</span>
+
+    // returns wind direction
+    private String getWindDirection(double degrees) {
+<span class="fc" id="L410">        String[] directions = { &quot;N&quot;, &quot;NNE&quot;, &quot;NE&quot;, &quot;ENE&quot;, &quot;E&quot;, &quot;ESE&quot;, &quot;SE&quot;, &quot;SSE&quot;,</span>
+                &quot;S&quot;, &quot;SSW&quot;, &quot;SW&quot;, &quot;WSW&quot;, &quot;W&quot;, &quot;WNW&quot;, &quot;NW&quot;, &quot;NNW&quot; };
+<span class="fc" id="L412">        int index = (int) Math.round(degrees / 22.5) % 16;</span>
+<span class="fc" id="L413">        return directions[index];</span>
+    }
+
+    // error display
+    private void showError(String message) {
+<span class="fc" id="L418">        errorView.setText(message);</span>
+<span class="fc" id="L419">        errorView.setVisibility(View.VISIBLE);</span>
+<span class="fc" id="L420">        temperatureView.setText(ERROR_TEXT);</span>
+<span class="fc" id="L421">        conditionView.setText(ERROR_TEXT);</span>
+<span class="fc" id="L422">        humidityView.setText(ERROR_TEXT);</span>
+<span class="fc" id="L423">        windView.setText(ERROR_TEXT);</span>
+<span class="fc" id="L424">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

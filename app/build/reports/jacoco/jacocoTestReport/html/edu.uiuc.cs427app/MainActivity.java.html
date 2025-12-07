@@ -1,0 +1,668 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainActivity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">edu.uiuc.cs427app</a> &gt; <span class="el_source">MainActivity.java</span></div><h1>MainActivity.java</h1><pre class="source lang-java linenums">package edu.uiuc.cs427app;
+
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
+import android.util.TypedValue;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.text.TextUtils;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.navigation.ui.AppBarConfiguration;
+
+import edu.uiuc.cs427app.databinding.ActivityMainBinding;
+import edu.uiuc.cs427app.AppDatabase;
+import edu.uiuc.cs427app.City;
+import edu.uiuc.cs427app.CityDao;
+import edu.uiuc.cs427app.DatabaseClient;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Arrays;
+
+<span class="fc" id="L36">public class MainActivity extends BaseActivity implements View.OnClickListener {</span>
+
+    private AppBarConfiguration appBarConfiguration;
+    private ActivityMainBinding binding;
+    private LinearLayout locationContainer;
+    private ArrayList&lt;Integer&gt; cityList; // Store city IDs instead of names
+    private static final String ACCOUNT_CITIES_KEY = &quot;cities&quot;; // stored in AccountManager userData
+    private android.app.ProgressDialog progressDialog;
+<span class="fc" id="L44">    private volatile boolean importAttempted = false;</span>
+    private AccountManager accountManager;
+    private Account account;
+    private String username; // Current logged-in username required for theme
+    
+    // this is the function for extracting all the cities in the world
+    private void importCitiesFromCSV() {
+<span class="fc" id="L51">        AppIdlingResource.increment(); // Mark async operation start</span>
+<span class="fc" id="L52">        new Thread(() -&gt; {</span>
+            try {
+<span class="fc" id="L54">                BufferedReader reader = new BufferedReader(</span>
+<span class="fc" id="L55">                        new InputStreamReader(getAssets().open(&quot;worldcities.csv&quot;)));</span>
+<span class="fc" id="L56">                List&lt;City&gt; cities = new ArrayList&lt;&gt;();</span>
+                String line;
+<span class="fc" id="L58">                reader.readLine(); // 跳过 header</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                while ((line = reader.readLine()) != null) {</span>
+<span class="fc" id="L60">                    List&lt;String&gt; parts = parseCsvLine(line);</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">                    if (parts.size() &lt; 8) {</span>
+<span class="nc" id="L62">                        continue;</span>
+                    }
+                    // schema: city, lat, lng, country, iso2, iso3, admin_name, id
+<span class="fc" id="L65">                    String city = parts.get(0).trim();</span>
+
+                    double lat;
+                    double lng;
+<span class="fc" id="L69">                    String country = parts.get(3).trim();</span>
+<span class="fc" id="L70">                    String iso2 = parts.get(4).trim();</span>
+<span class="fc" id="L71">                    String iso3 = parts.get(5).trim();</span>
+<span class="fc" id="L72">                    String admin_name = parts.get(6).trim();</span>
+                    int id;
+                    try {
+<span class="fc" id="L75">                        lat = Double.parseDouble(parts.get(1).trim());</span>
+<span class="fc" id="L76">                        lng = Double.parseDouble(parts.get(2).trim());</span>
+<span class="fc" id="L77">                        id = Integer.parseInt(parts.get(7).trim());</span>
+<span class="nc" id="L78">                    } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L79">                        continue;</span>
+<span class="fc" id="L80">                    }</span>
+
+<span class="fc" id="L82">                    cities.add(new City(city, lat, lng, country, iso2, iso3, admin_name, id));</span>
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">                    if (cities.size() &gt;= 500) {</span>
+<span class="fc" id="L85">                        DatabaseClient.getInstance(this).getAppDatabase()</span>
+<span class="fc" id="L86">                                .cityDao().insertAll(cities);</span>
+<span class="fc" id="L87">                        cities.clear();</span>
+                    }
+<span class="fc" id="L89">                }</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                if (!cities.isEmpty()) {</span>
+<span class="fc" id="L91">                    DatabaseClient.getInstance(this).getAppDatabase()</span>
+<span class="fc" id="L92">                            .cityDao().insertAll(cities);</span>
+                }
+<span class="fc" id="L94">                reader.close();</span>
+<span class="fc" id="L95">            } catch (Exception e) {</span>
+<span class="fc" id="L96">                e.printStackTrace();</span>
+            } finally {
+<span class="fc" id="L98">                AppIdlingResource.decrement(); // Mark async operation complete</span>
+            }
+<span class="fc" id="L100">        }).start();</span>
+<span class="fc" id="L101">    }</span>
+
+    // Parse the CSV file and extract the city name
+    private List&lt;String&gt; parseCsvLine(String line) {
+<span class="fc" id="L105">        List&lt;String&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (line == null) {</span>
+<span class="nc" id="L107">            return result;</span>
+        }
+<span class="fc" id="L109">        StringBuilder current = new StringBuilder();</span>
+<span class="fc" id="L110">        boolean inQuotes = false;</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        for (int i = 0; i &lt; line.length(); i++) {</span>
+<span class="fc" id="L112">            char c = line.charAt(i);</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (c == '&quot;') {</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                inQuotes = !inQuotes;</span>
+<span class="fc bfc" id="L115" title="All 4 branches covered.">            } else if (c == ',' &amp;&amp; !inQuotes) {</span>
+<span class="fc" id="L116">                result.add(current.toString());</span>
+<span class="fc" id="L117">                current.setLength(0);</span>
+            } else {
+<span class="fc" id="L119">                current.append(c);</span>
+            }
+        }
+<span class="fc" id="L122">        result.add(current.toString());</span>
+<span class="fc" id="L123">        return result;</span>
+    }
+
+    // This function basically will show the tab/dialogue once a user click the &quot;Add
+    // City&quot; button
+    private void showAddLocationDialog() {
+<span class="fc" id="L129">        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);</span>
+<span class="fc" id="L130">        builder.setTitle(&quot;Add a New City&quot;);</span>
+<span class="fc" id="L131">        final android.widget.EditText input = new android.widget.EditText(this);</span>
+<span class="fc" id="L132">        input.setHint(&quot;Enter city name&quot;);</span>
+<span class="fc" id="L133">        builder.setView(input);</span>
+<span class="fc" id="L134">        builder.setPositiveButton(&quot;Add&quot;, (dialog, which) -&gt; {</span>
+<span class="fc" id="L135">            CharSequence text = input.getText();</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">            String cityName = text == null ? null : text.toString();</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">            if (cityName != null) {</span>
+<span class="fc" id="L138">                cityName = cityName.trim();</span>
+            }
+
+<span class="pc bpc" id="L141" title="2 of 4 branches missed.">            if (cityName == null || cityName.isEmpty()) {</span>
+<span class="nc" id="L142">                showInputErrorDialog(&quot;Please enter a city name!&quot;);</span>
+<span class="nc" id="L143">                return;</span>
+            }
+
+            // Basic input validation
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">            if (containsNumbers(cityName)) {</span>
+<span class="nc" id="L148">                showInputErrorDialog(&quot;City names should not contain numbers. Please enter a valid city name.&quot;);</span>
+            } else {
+<span class="fc" id="L150">                validateAndAddCity(cityName);</span>
+            }
+<span class="fc" id="L152">        });</span>
+<span class="pc" id="L153">        builder.setNegativeButton(&quot;Cancel&quot;, (dialog, which) -&gt; dialog.cancel());</span>
+<span class="fc" id="L154">        builder.show();</span>
+<span class="fc" id="L155">    }</span>
+
+    // This function will show the error message once user writes the wrong message
+    // input
+    private void showInputErrorDialog(String message) {
+<span class="nc" id="L160">        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);</span>
+<span class="nc" id="L161">        builder.setTitle(&quot;⚠️ Input Error&quot;);</span>
+<span class="nc" id="L162">        builder.setMessage(message);</span>
+<span class="nc" id="L163">        builder.setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; {</span>
+<span class="nc" id="L164">            dialog.dismiss();</span>
+            // Reopen the add city dialog
+<span class="nc" id="L166">            showAddLocationDialog();</span>
+<span class="nc" id="L167">        });</span>
+<span class="nc" id="L168">        builder.setNegativeButton(&quot;Cancel&quot;, (dialog, which) -&gt; dialog.dismiss());</span>
+<span class="nc" id="L169">        builder.setIcon(android.R.drawable.ic_dialog_alert);</span>
+<span class="nc" id="L170">        builder.show();</span>
+<span class="nc" id="L171">    }</span>
+
+    // It tests if the input has integers
+    private boolean containsNumbers(String text) {
+<span class="fc" id="L175">        return text.matches(&quot;.*\\d.*&quot;);</span>
+    }
+
+    // It tests if the city is already existed in the list
+    private boolean isCityAlreadyInList(int cityId) {
+<span class="fc" id="L180">        return cityList.contains(cityId);</span>
+    }
+
+    // It validates the city before writing to the city list. Otherwise, it shows
+    // error message
+    private void validateAndAddCity(String cityName) {
+        // Show progress dialog
+<span class="fc" id="L187">        progressDialog = new android.app.ProgressDialog(this);</span>
+<span class="fc" id="L188">        progressDialog.setMessage(&quot;Validating city...&quot;);</span>
+<span class="fc" id="L189">        progressDialog.setCancelable(false);</span>
+<span class="fc" id="L190">        progressDialog.show();</span>
+
+<span class="fc" id="L192">        AppIdlingResource.increment(); // Mark async operation start</span>
+<span class="fc" id="L193">        new Thread(() -&gt; {</span>
+            try {
+<span class="fc" id="L195">                CityDao dao = DatabaseClient.getInstance(this)</span>
+<span class="fc" id="L196">                        .getAppDatabase()</span>
+<span class="fc" id="L197">                        .cityDao();</span>
+
+<span class="fc" id="L199">                int total = dao.countCities();</span>
+                // If database is empty, try to (re)trigger import and wait briefly
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">                if (total == 0) {</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                    if (!importAttempted) {</span>
+<span class="nc" id="L203">                        importAttempted = true;</span>
+<span class="nc" id="L204">                        importCitiesFromCSV();</span>
+                    }
+                    // Poll a few times up to ~2 seconds for import to fill DB
+<span class="nc" id="L207">                    int attempts = 0;</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                    while (attempts &lt; 10) {</span>
+                        try {
+<span class="nc" id="L210">                            Thread.sleep(200);</span>
+<span class="nc" id="L211">                        } catch (InterruptedException ignored) {</span>
+<span class="nc" id="L212">                        }</span>
+<span class="nc" id="L213">                        total = dao.countCities();</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                        if (total &gt; 0)</span>
+<span class="nc" id="L215">                            break;</span>
+<span class="nc" id="L216">                        attempts++;</span>
+                    }
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                    if (total == 0) {</span>
+<span class="nc" id="L219">                        runOnUiThread(() -&gt; {</span>
+<span class="nc bnc" id="L220" title="All 4 branches missed.">                            if (progressDialog != null &amp;&amp; progressDialog.isShowing()) {</span>
+<span class="nc" id="L221">                                progressDialog.dismiss();</span>
+                            }
+<span class="nc" id="L223">                            showInputErrorDialog(&quot;Initializing city database, please try again in a moment.&quot;);</span>
+<span class="nc" id="L224">                        });</span>
+<span class="nc" id="L225">                        AppIdlingResource.decrement(); // Mark async operation complete</span>
+<span class="nc" id="L226">                        return;</span>
+                    }
+                }
+
+<span class="fc" id="L230">                List&lt;City&gt; matchedCities = dao.findAllByName(cityName);</span>
+
+<span class="fc" id="L232">                runOnUiThread(() -&gt; {</span>
+<span class="pc bpc" id="L233" title="2 of 4 branches missed.">                    if (progressDialog != null &amp;&amp; progressDialog.isShowing()) {</span>
+<span class="fc" id="L234">                        progressDialog.dismiss();</span>
+                    }
+
+<span class="pc bpc" id="L237" title="2 of 4 branches missed.">                    if (matchedCities == null || matchedCities.isEmpty()) {</span>
+<span class="nc" id="L238">                        showInputErrorDialog(&quot;This may be not a valid city in the real world.&quot;);</span>
+<span class="nc" id="L239">                        AppIdlingResource.decrement(); // Mark async operation complete</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">                    } else if (matchedCities.size() == 1) {</span>
+<span class="fc" id="L241">                        City city = matchedCities.get(0);</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">                        if (isCityAlreadyInList(city.getId())) {</span>
+<span class="nc" id="L243">                            showInputErrorDialog(&quot;This city already exists in your list!&quot;);</span>
+<span class="nc" id="L244">                            AppIdlingResource.decrement(); // Mark async operation complete</span>
+                        } else {
+<span class="fc" id="L246">                            addCityToList(city);</span>
+<span class="fc" id="L247">                            showSuccessDialog(city.getCity() + &quot;, &quot; + city.getCountry());</span>
+                            // Note: decrement is called in addCityToUI after UI is created
+                        }
+<span class="fc" id="L250">                    } else {</span>
+<span class="nc" id="L251">                        showCityChoiceDialog(matchedCities);</span>
+<span class="nc" id="L252">                        AppIdlingResource.decrement(); // Mark async operation complete</span>
+                    }
+<span class="fc" id="L254">                });</span>
+<span class="nc" id="L255">            } catch (Exception e) {</span>
+<span class="nc" id="L256">                runOnUiThread(() -&gt; {</span>
+<span class="nc bnc" id="L257" title="All 4 branches missed.">                    if (progressDialog != null &amp;&amp; progressDialog.isShowing()) {</span>
+<span class="nc" id="L258">                        progressDialog.dismiss();</span>
+                    }
+<span class="nc" id="L260">                    showInputErrorDialog(&quot;Unexpected error during validation. Please try again.&quot;);</span>
+<span class="nc" id="L261">                });</span>
+<span class="nc" id="L262">                AppIdlingResource.decrement(); // Mark async operation complete</span>
+<span class="fc" id="L263">            }</span>
+<span class="fc" id="L264">        }).start();</span>
+<span class="fc" id="L265">    }</span>
+
+    private List&lt;City&gt; findMatchingCities(String cityName) {
+        // Deprecated by background-threaded DAO queries; keep method for compatibility
+        // if needed
+<span class="nc" id="L270">        return new ArrayList&lt;&gt;();</span>
+    }
+
+    // If user successfully adds a city to the list, it will have a success dialog
+    // message
+    private void showSuccessDialog(String cityName) {
+<span class="fc" id="L276">        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);</span>
+<span class="fc" id="L277">        builder.setTitle(&quot;✅ City Added Successfully!&quot;);</span>
+<span class="fc" id="L278">        builder.setMessage(&quot;The city \&quot;&quot; + cityName + &quot;\&quot; has been added to your list.&quot;);</span>
+<span class="fc" id="L279">        builder.setPositiveButton(&quot;OK&quot;, (dialog, which) -&gt; dialog.dismiss());</span>
+<span class="fc" id="L280">        builder.setIcon(android.R.drawable.ic_dialog_info);</span>
+<span class="fc" id="L281">        builder.show();</span>
+<span class="fc" id="L282">    }</span>
+
+    // This shows the city list once user writes a city name
+    // there would be many places that share the same city name
+    private void showCityChoiceDialog(List&lt;City&gt; cities) {
+<span class="nc" id="L287">        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);</span>
+<span class="nc" id="L288">        builder.setTitle(&quot;Multiple Cities Found - Please Select Country&quot;);</span>
+<span class="nc" id="L289">        String[] options = new String[cities.size()];</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        for (int i = 0; i &lt; cities.size(); i++) {</span>
+<span class="nc" id="L291">            City c = cities.get(i);</span>
+<span class="nc" id="L292">            options[i] = c.getCity() + &quot;, &quot; + c.getCountry();</span>
+        }
+<span class="nc" id="L294">        builder.setItems(options, (dialog, which) -&gt; {</span>
+<span class="nc" id="L295">            City selectedCity = cities.get(which);</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">            if (isCityAlreadyInList(selectedCity.getId())) {</span>
+<span class="nc" id="L297">                showInputErrorDialog(&quot;This city already exists in your list!&quot;);</span>
+            } else {
+<span class="nc" id="L299">                addCityToList(selectedCity);</span>
+<span class="nc" id="L300">                showSuccessDialog(selectedCity.getCity() + &quot;, &quot; + selectedCity.getCountry());</span>
+            }
+<span class="nc" id="L302">        });</span>
+<span class="nc" id="L303">        builder.setNegativeButton(&quot;Cancel&quot;, (dialog, which) -&gt; dialog.dismiss());</span>
+<span class="nc" id="L304">        builder.show();</span>
+<span class="nc" id="L305">    }</span>
+
+    // It adds the city to the list
+    private void addCityToList(City city) {
+        // Add city ID to city list
+<span class="fc" id="L310">        cityList.add(city.getId());</span>
+
+        // Add to UI
+<span class="fc" id="L313">        addCityToUI(city.getId());</span>
+
+        // Save to preferences
+<span class="fc" id="L316">        saveCityList();</span>
+<span class="fc" id="L317">    }</span>
+
+    // It removes the selected city from the list
+    private void removeCityFromList(int cityId, LinearLayout row) {
+        // Remove from city list
+<span class="fc" id="L322">        cityList.remove((Integer) cityId);</span>
+
+        // Remove from UI
+<span class="fc" id="L325">        locationContainer.removeView(row);</span>
+
+        // Save to preferences
+<span class="fc" id="L328">        saveCityList();</span>
+<span class="fc" id="L329">    }</span>
+
+    // It saves your current list of cities to persistent storage
+    private void saveCityList() {
+        // Persist the city list (IDs) to the current account so each user has their own
+        // list
+<span class="pc bpc" id="L335" title="1 of 4 branches missed.">        if (account != null &amp;&amp; accountManager != null) {</span>
+            // Convert Integer list to String array for storage
+<span class="fc" id="L337">            String[] idStrings = new String[cityList.size()];</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">            for (int i = 0; i &lt; cityList.size(); i++) {</span>
+<span class="fc" id="L339">                idStrings[i] = String.valueOf(cityList.get(i));</span>
+            }
+<span class="fc" id="L341">            String joined = TextUtils.join(&quot;,&quot;, idStrings);</span>
+<span class="fc" id="L342">            accountManager.setUserData(account, ACCOUNT_CITIES_KEY, joined);</span>
+        } else {
+            // Fallback to SharedPreferences if account is unavailable
+
+        }
+<span class="fc" id="L347">    }</span>
+
+    // Loads the user's saved city list from either their account storage
+    // (AccountManager)
+    // It updates the local cityList and dynamically
+    // adds each city to the UI.
+    private void loadCityListFromAccount() {
+<span class="fc" id="L354">        cityList.clear();</span>
+<span class="pc bpc" id="L355" title="1 of 4 branches missed.">        if (account != null &amp;&amp; accountManager != null) {</span>
+<span class="fc" id="L356">            String stored = accountManager.getUserData(account, ACCOUNT_CITIES_KEY);</span>
+<span class="pc bpc" id="L357" title="3 of 4 branches missed.">            if (stored != null &amp;&amp; !stored.isEmpty()) {</span>
+<span class="nc" id="L358">                String[] cityIds = TextUtils.split(stored, &quot;,&quot;);</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">                for (String idStr : cityIds) {</span>
+<span class="nc bnc" id="L360" title="All 2 branches missed.">                    String id = idStr == null ? null : idStr.trim();</span>
+<span class="nc bnc" id="L361" title="All 4 branches missed.">                    if (id != null &amp;&amp; !id.isEmpty()) {</span>
+                        try {
+<span class="nc" id="L363">                            int cityId = Integer.parseInt(id);</span>
+<span class="nc" id="L364">                            cityList.add(cityId);</span>
+<span class="nc" id="L365">                            addCityToUI(cityId);</span>
+<span class="nc" id="L366">                        } catch (NumberFormatException e) {</span>
+                            // Skip invalid IDs
+<span class="nc" id="L368">                            continue;</span>
+<span class="nc" id="L369">                        }</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L374">    }</span>
+
+    // Dynamically add a city entry (name + WEATHER + MAP + REMOVE buttons) to the
+    // UI
+    public void addCityToUI(int cityId) {
+        // Fetch city information from database in background thread
+<span class="fc" id="L380">        AppIdlingResource.increment(); // Mark async operation start</span>
+<span class="fc" id="L381">        new Thread(() -&gt; {</span>
+            try {
+<span class="fc" id="L383">                CityDao dao = DatabaseClient.getInstance(this)</span>
+<span class="fc" id="L384">                        .getAppDatabase()</span>
+<span class="fc" id="L385">                        .cityDao();</span>
+<span class="fc" id="L386">                City city = dao.findById(cityId);</span>
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">                if (city != null) {</span>
+<span class="fc" id="L388">                    runOnUiThread(() -&gt; {</span>
+<span class="fc" id="L389">                        createCityUIEntry(city, cityId);</span>
+<span class="fc" id="L390">                        AppIdlingResource.decrement(); // Mark async operation complete after UI is created</span>
+<span class="fc" id="L391">                    });</span>
+                } else {
+<span class="nc" id="L393">                    AppIdlingResource.decrement(); // Mark async operation complete if city not found</span>
+                }
+<span class="nc" id="L395">            } catch (Exception e) {</span>
+<span class="nc" id="L396">                e.printStackTrace();</span>
+<span class="nc" id="L397">                AppIdlingResource.decrement(); // Mark async operation complete on error</span>
+<span class="fc" id="L398">            }</span>
+<span class="fc" id="L399">        }).start();</span>
+<span class="fc" id="L400">    }</span>
+
+    // Creates the UI entry for a city
+    private void createCityUIEntry(City city, int cityId) {
+        // Create vertical container for city entry
+<span class="fc" id="L405">        LinearLayout cityEntry = new LinearLayout(this);</span>
+<span class="fc" id="L406">        cityEntry.setOrientation(LinearLayout.VERTICAL);</span>
+<span class="fc" id="L407">        cityEntry.setTag(cityId); // Tag for easy identification using city ID</span>
+
+<span class="fc" id="L409">        LinearLayout.LayoutParams entryParams = new LinearLayout.LayoutParams(</span>
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+<span class="fc" id="L412">        entryParams.setMargins(0, 20, 0, 20);</span>
+<span class="fc" id="L413">        cityEntry.setLayoutParams(entryParams);</span>
+
+        // City name text view - displayed prominently on top
+<span class="fc" id="L416">        android.widget.TextView cityText = new android.widget.TextView(this);</span>
+<span class="fc" id="L417">        cityText.setText(city.getCity());</span>
+<span class="fc" id="L418">        cityText.setTextSize(20);</span>
+<span class="fc" id="L419">        cityText.setTypeface(null, Typeface.BOLD);</span>
+<span class="fc" id="L420">        cityText.setTextColor(android.graphics.Color.parseColor(ThemeManager.getTextColor(this)));</span>
+
+<span class="fc" id="L422">        LinearLayout.LayoutParams cityTextParams = new LinearLayout.LayoutParams(</span>
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+<span class="fc" id="L425">        cityTextParams.setMargins(0, 0, 0, 10);</span>
+<span class="fc" id="L426">        cityText.setLayoutParams(cityTextParams);</span>
+
+        // Create horizontal layout for buttons
+<span class="fc" id="L429">        LinearLayout buttonRow = new LinearLayout(this);</span>
+<span class="fc" id="L430">        buttonRow.setOrientation(LinearLayout.HORIZONTAL);</span>
+<span class="fc" id="L431">        LinearLayout.LayoutParams buttonRowParams = new LinearLayout.LayoutParams(</span>
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+<span class="fc" id="L434">        buttonRow.setLayoutParams(buttonRowParams);</span>
+
+        // Programatically creating buttons, intializing colors/shape (rounded corner)
+<span class="fc" id="L437">        GradientDrawable purpleButtonShape = new GradientDrawable();</span>
+<span class="fc" id="L438">        purpleButtonShape.setCornerRadius(</span>
+<span class="fc" id="L439">                TypedValue.applyDimension(</span>
+                        TypedValue.COMPLEX_UNIT_DIP, 8,
+<span class="fc" id="L441">                        getResources().getDisplayMetrics()));</span>
+<span class="fc" id="L442">        purpleButtonShape.setColor(ContextCompat.getColor(this, R.color.purple_500));</span>
+
+<span class="fc" id="L444">        GradientDrawable removeButtonShape = new GradientDrawable();</span>
+<span class="fc" id="L445">        removeButtonShape.setCornerRadius(</span>
+<span class="fc" id="L446">                TypedValue.applyDimension(</span>
+                        TypedValue.COMPLEX_UNIT_DIP, 8,
+<span class="fc" id="L448">                        getResources().getDisplayMetrics()));</span>
+<span class="fc" id="L449">        removeButtonShape.setColor(ContextCompat.getColor(this, R.color.logout_button_red));</span>
+
+<span class="fc" id="L451">        int padding = (int) TypedValue.applyDimension(</span>
+                TypedValue.COMPLEX_UNIT_DIP, 12,
+<span class="fc" id="L453">                getResources().getDisplayMetrics());</span>
+
+<span class="fc" id="L455">        int marginHorizontal = (int) TypedValue.applyDimension(</span>
+                TypedValue.COMPLEX_UNIT_DIP, 4,
+<span class="fc" id="L457">                getResources().getDisplayMetrics());</span>
+
+        // WEATHER button
+<span class="fc" id="L460">        Button weatherButton = new Button(this);</span>
+<span class="fc" id="L461">        weatherButton.setText(&quot;WEATHER&quot;);</span>
+<span class="fc" id="L462">        weatherButton.setTextColor(Color.WHITE);</span>
+<span class="fc" id="L463">        weatherButton.setBackground(purpleButtonShape);</span>
+<span class="fc" id="L464">        weatherButton.setTypeface(null, Typeface.BOLD);</span>
+
+<span class="fc" id="L466">        LinearLayout.LayoutParams weatherParams = new LinearLayout.LayoutParams(</span>
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+<span class="fc" id="L468">        weatherParams.setMargins(0, 0, marginHorizontal, 0);</span>
+<span class="fc" id="L469">        weatherButton.setLayoutParams(weatherParams);</span>
+<span class="fc" id="L470">        weatherButton.setMinHeight(0);</span>
+<span class="fc" id="L471">        weatherButton.setMinimumHeight(0);</span>
+<span class="fc" id="L472">        weatherButton.setPadding(padding, padding / 2, padding, padding / 2);</span>
+<span class="fc" id="L473">        weatherButton.setOnClickListener(v -&gt; {</span>
+            // Open WeatherActivity with city ID
+<span class="fc" id="L475">            Intent intent = new Intent(this, WeatherActivity.class);</span>
+<span class="fc" id="L476">            intent.putExtra(&quot;cityId&quot;, cityId);</span>
+<span class="fc" id="L477">            intent.putExtra(&quot;city&quot;, city.getCity());</span>
+<span class="fc" id="L478">            intent.putExtra(&quot;lat&quot;, city.getLat());</span>
+<span class="fc" id="L479">            intent.putExtra(&quot;lng&quot;, city.getLng());</span>
+<span class="fc" id="L480">            intent.putExtra(&quot;username&quot;, username);</span>
+<span class="fc" id="L481">            startActivity(intent);</span>
+<span class="fc" id="L482">        });</span>
+
+        // MAP button
+<span class="fc" id="L485">        Button mapButton = new Button(this);</span>
+<span class="fc" id="L486">        mapButton.setText(&quot;MAP&quot;);</span>
+<span class="fc" id="L487">        mapButton.setTextColor(Color.WHITE);</span>
+<span class="fc" id="L488">        mapButton.setBackground(purpleButtonShape);</span>
+<span class="fc" id="L489">        mapButton.setTypeface(null, Typeface.BOLD);</span>
+
+<span class="fc" id="L491">        LinearLayout.LayoutParams mapParams = new LinearLayout.LayoutParams(</span>
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+<span class="fc" id="L493">        mapParams.setMargins(0, 0, marginHorizontal, 0);</span>
+<span class="fc" id="L494">        mapButton.setLayoutParams(mapParams);</span>
+<span class="fc" id="L495">        mapButton.setMinHeight(0);</span>
+<span class="fc" id="L496">        mapButton.setMinimumHeight(0);</span>
+<span class="fc" id="L497">        mapButton.setPadding(padding, padding / 2, padding, padding / 2);</span>
+<span class="fc" id="L498">        mapButton.setOnClickListener(v -&gt; {</span>
+<span class="fc" id="L499">            Intent intent = new Intent(this, MapActivity.class);</span>
+<span class="fc" id="L500">            intent.putExtra(&quot;city&quot;, city.getCity());</span>
+<span class="fc" id="L501">            intent.putExtra(&quot;lat&quot;, city.getLat());</span>
+<span class="fc" id="L502">            intent.putExtra(&quot;lng&quot;, city.getLng());</span>
+<span class="fc" id="L503">            intent.putExtra(&quot;username&quot;, username);</span>
+<span class="fc" id="L504">            startActivity(intent);</span>
+<span class="fc" id="L505">        });</span>
+
+        // REMOVE button
+<span class="fc" id="L508">        Button removeButton = new Button(this);</span>
+<span class="fc" id="L509">        removeButton.setId(R.id.removeButton);</span>
+<span class="fc" id="L510">        removeButton.setBackground(removeButtonShape);</span>
+<span class="fc" id="L511">        removeButton.setTypeface(null, Typeface.BOLD);</span>
+<span class="fc" id="L512">        removeButton.setText(&quot;REMOVE&quot;);</span>
+<span class="fc" id="L513">        removeButton.setTextColor(Color.WHITE);</span>
+<span class="fc" id="L514">        removeButton.setMinHeight(0);</span>
+<span class="fc" id="L515">        removeButton.setMinimumHeight(0);</span>
+
+<span class="fc" id="L517">        LinearLayout.LayoutParams removeParams = new LinearLayout.LayoutParams(</span>
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+<span class="fc" id="L519">        removeParams.setMargins(0, 0, 0, 0);</span>
+<span class="fc" id="L520">        removeButton.setLayoutParams(removeParams);</span>
+<span class="fc" id="L521">        removeButton.setPadding(padding, padding / 2, padding, padding / 2);</span>
+<span class="fc" id="L522">        removeButton.setOnClickListener(v -&gt; removeCityFromList(cityId, cityEntry));</span>
+
+        // Add views to layouts
+<span class="fc" id="L525">        buttonRow.addView(weatherButton);</span>
+<span class="fc" id="L526">        buttonRow.addView(mapButton);</span>
+<span class="fc" id="L527">        buttonRow.addView(removeButton);</span>
+
+<span class="fc" id="L529">        cityEntry.addView(cityText);</span>
+<span class="fc" id="L530">        cityEntry.addView(buttonRow);</span>
+<span class="fc" id="L531">        locationContainer.addView(cityEntry);</span>
+<span class="fc" id="L532">    }</span>
+
+    // Initialize the activity, load user data, and set up buttons
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+<span class="fc" id="L537">        super.onCreate(savedInstanceState);</span>
+<span class="fc" id="L538">        setContentView(R.layout.activity_main);</span>
+
+        // Ensure city list is initialized before any usage
+<span class="fc" id="L541">        cityList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L543">        accountManager = AccountManager.get(this);</span>
+<span class="fc" id="L544">        username = getIntent().getStringExtra(&quot;username&quot;);</span>
+<span class="pc bpc" id="L545" title="1 of 2 branches missed.">        if (getSupportActionBar() != null) {</span>
+<span class="fc" id="L546">            getSupportActionBar().setTitle(&quot;Team 417 - &quot; + username);</span>
+        }
+
+<span class="fc" id="L549">        Account[] accounts = accountManager.getAccountsByType(LoginActivity.ACCOUNT_TYPE);</span>
+<span class="fc bfc" id="L550" title="All 2 branches covered.">        for (Account acc : accounts) {</span>
+<span class="fc bfc" id="L551" title="All 2 branches covered.">            if (acc.name.equals(username)) {</span>
+<span class="fc" id="L552">                account = acc;</span>
+<span class="fc" id="L553">                break;</span>
+            }
+        }
+
+<span class="fc" id="L557">        locationContainer = findViewById(R.id.locationContainer);</span>
+<span class="fc" id="L558">        Button buttonNew = findViewById(R.id.buttonAddLocation);</span>
+<span class="fc" id="L559">        Button buttonLogout = findViewById(R.id.buttonLogout);</span>
+
+<span class="fc" id="L561">        buttonNew.setOnClickListener(this);</span>
+<span class="fc" id="L562">        buttonLogout.setOnClickListener(this);</span>
+
+<span class="fc" id="L564">        importCitiesFromCSV();</span>
+<span class="fc" id="L565">        importAttempted = true;</span>
+
+<span class="fc" id="L567">        String passedCityList = getIntent().getStringExtra(LoginActivity.KEY_CITY_LIST);</span>
+<span class="fc bfc" id="L568" title="All 4 branches covered.">        if (passedCityList != null &amp;&amp; !passedCityList.isEmpty()) {</span>
+            // Try to parse as IDs first (new format)
+<span class="fc" id="L570">            String[] cityIds = TextUtils.split(passedCityList, &quot;,&quot;);</span>
+<span class="fc" id="L571">            boolean allIds = true;</span>
+<span class="fc bfc" id="L572" title="All 2 branches covered.">            for (String idStr : cityIds) {</span>
+<span class="pc bpc" id="L573" title="1 of 2 branches missed.">                String id = idStr == null ? null : idStr.trim();</span>
+<span class="pc bpc" id="L574" title="2 of 4 branches missed.">                if (id != null &amp;&amp; !id.isEmpty()) {</span>
+                    try {
+<span class="fc" id="L576">                        Integer.parseInt(id);</span>
+<span class="nc" id="L577">                    } catch (NumberFormatException e) {</span>
+<span class="nc" id="L578">                        allIds = false;</span>
+<span class="nc" id="L579">                        break;</span>
+<span class="fc" id="L580">                    }</span>
+                }
+            }
+
+<span class="pc bpc" id="L584" title="1 of 2 branches missed.">            if (allIds) {</span>
+                // New format: IDs
+<span class="fc bfc" id="L586" title="All 2 branches covered.">                for (String idStr : cityIds) {</span>
+<span class="pc bpc" id="L587" title="1 of 2 branches missed.">                    String id = idStr == null ? null : idStr.trim();</span>
+<span class="pc bpc" id="L588" title="2 of 4 branches missed.">                    if (id != null &amp;&amp; !id.isEmpty()) {</span>
+                        try {
+<span class="fc" id="L590">                            int cityId = Integer.parseInt(id);</span>
+<span class="fc" id="L591">                            cityList.add(cityId);</span>
+<span class="fc" id="L592">                            addCityToUI(cityId);</span>
+<span class="nc" id="L593">                        } catch (NumberFormatException e) {</span>
+                            // Skip invalid IDs
+<span class="nc" id="L595">                            continue;</span>
+<span class="fc" id="L596">                        }</span>
+                    }
+                }
+            } else {
+                // Old format: city names - need to convert to IDs
+                // This is for backward compatibility
+<span class="nc bnc" id="L602" title="All 2 branches missed.">                for (String cityName : cityIds) {</span>
+<span class="nc bnc" id="L603" title="All 2 branches missed.">                    String name = cityName == null ? null : cityName.trim();</span>
+<span class="nc bnc" id="L604" title="All 4 branches missed.">                    if (name != null &amp;&amp; !name.isEmpty()) {</span>
+                        // Find city by name and get ID
+<span class="nc" id="L606">                        AppIdlingResource.increment(); // Mark async operation start</span>
+<span class="nc" id="L607">                        new Thread(() -&gt; {</span>
+                            try {
+<span class="nc" id="L609">                                CityDao dao = DatabaseClient.getInstance(this)</span>
+<span class="nc" id="L610">                                        .getAppDatabase()</span>
+<span class="nc" id="L611">                                        .cityDao();</span>
+<span class="nc" id="L612">                                List&lt;City&gt; cities = dao.findAllByName(name);</span>
+<span class="nc bnc" id="L613" title="All 4 branches missed.">                                if (cities != null &amp;&amp; !cities.isEmpty()) {</span>
+<span class="nc" id="L614">                                    City city = cities.get(0);</span>
+<span class="nc" id="L615">                                    int cityId = city.getId();</span>
+<span class="nc bnc" id="L616" title="All 2 branches missed.">                                    if (!cityList.contains(cityId)) {</span>
+<span class="nc" id="L617">                                        runOnUiThread(() -&gt; {</span>
+<span class="nc" id="L618">                                            cityList.add(cityId);</span>
+<span class="nc" id="L619">                                            addCityToUI(cityId); // addCityToUI will handle its own increment/decrement</span>
+<span class="nc" id="L620">                                            saveCityList();</span>
+<span class="nc" id="L621">                                            AppIdlingResource.decrement(); // Database query complete</span>
+<span class="nc" id="L622">                                        });</span>
+                                    } else {
+<span class="nc" id="L624">                                        AppIdlingResource.decrement(); // Mark async operation complete</span>
+                                    }
+<span class="nc" id="L626">                                } else {</span>
+<span class="nc" id="L627">                                    AppIdlingResource.decrement(); // Mark async operation complete</span>
+                                }
+<span class="nc" id="L629">                            } catch (Exception e) {</span>
+<span class="nc" id="L630">                                e.printStackTrace();</span>
+<span class="nc" id="L631">                                AppIdlingResource.decrement(); // Mark async operation complete on error</span>
+<span class="nc" id="L632">                            }</span>
+<span class="nc" id="L633">                        }).start();</span>
+                    }
+                }
+            }
+            // Ensure the passed list is saved to the current account
+<span class="fc" id="L638">            saveCityList();</span>
+<span class="fc" id="L639">        } else {</span>
+            // Load from account storage when nothing is passed from LoginActivity
+<span class="fc" id="L641">            loadCityListFromAccount();</span>
+        }
+<span class="fc" id="L643">    }</span>
+
+    // Handle button clicks for Add Location and Logout
+    @Override
+    public void onClick(View view) {
+<span class="fc bfc" id="L648" title="All 2 branches covered.">        if (view.getId() == R.id.buttonAddLocation) {</span>
+<span class="fc" id="L649">            showAddLocationDialog();</span>
+<span class="pc bpc" id="L650" title="1 of 2 branches missed.">        } else if (view.getId() == R.id.buttonLogout) {</span>
+<span class="fc" id="L651">            Intent intent = new Intent(this, LoginActivity.class);</span>
+<span class="fc" id="L652">            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);</span>
+<span class="fc" id="L653">            startActivity(intent);</span>
+<span class="fc" id="L654">            finish();</span>
+        }
+<span class="fc" id="L656">    }</span>
+
+    // Clean up resources when the activity is destroyed
+    @Override
+    protected void onDestroy() {
+<span class="fc" id="L661">        super.onDestroy();</span>
+        // Clean up progress dialog to prevent memory leaks
+<span class="pc bpc" id="L663" title="1 of 4 branches missed.">        if (progressDialog != null &amp;&amp; progressDialog.isShowing()) {</span>
+<span class="nc" id="L664">            progressDialog.dismiss();</span>
+        }
+<span class="fc" id="L666">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
