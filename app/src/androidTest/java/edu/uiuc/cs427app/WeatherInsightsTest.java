@@ -43,8 +43,8 @@ public class WeatherInsightsTest {
     private static final double TEST_WIND_SPEED = 5.5;
     private static final double TEST_WIND_DEG = 180.0;
 
-    private static final int QUESTION_LOAD_WAIT_MS = 5000;
-    private static final int ANSWER_LOAD_WAIT_MS = 5000;
+    private static final int QUESTION_LOAD_WAIT_MS = 8000;
+    private static final int ANSWER_LOAD_WAIT_MS = 8000;
     private static final int STEPS_DEMO_WAIT = 1000;
 
     private ActivityScenario<WeatherInsightsActivity> scenario;

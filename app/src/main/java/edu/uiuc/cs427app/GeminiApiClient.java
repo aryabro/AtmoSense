@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 public class GeminiApiClient {
 
     private static final String TAG = "GeminiApiClient";
-    private static final String API_BASE_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=";
+    private static final String API_BASE_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=";
 
     private final String apiKey;
     private final ExecutorService executor;
