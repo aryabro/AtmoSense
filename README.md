@@ -2,7 +2,11 @@
 
 ## Overview
 
-A feature-rich Android weather application that combines real-time weather data with advanced AI capabilities. This app provides personalized user experiences, intelligent weather insights, and dynamic UI customization, supporting over 40,000 cities worldwide. 
+A feature-rich Android weather application that combines real-time weather data with advanced AI capabilities. This app provides personalized user experiences, intelligent weather insights, and dynamic UI customization, supporting over 40,000 cities worldwide.
+
+## Demo
+
+[Watch the application demo](https://drive.google.com/file/d/1VqYiaP8VnDN_AfZOpJ6qXD9okpAePTVd/view)
 
 ## Key Highlights
 
